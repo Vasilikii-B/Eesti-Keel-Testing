@@ -1,0 +1,2203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Eesti Keele Õppimine</title>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+  <style>
+    :root {
+      --blue: #3a8dde;
+      --blue-dark: #276fbe;
+      --black: #161616;
+      --white: #ffffff;
+
+      --background: #eef4fb;
+      --border: #d8e3ef;
+
+      --green: #20a75a;
+      --green-soft: #e7f8ee;
+
+      --red: #d94b4b;
+      --red-soft: #fdecec;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 18px;
+      font-family: Arial, sans-serif;
+      background: var(--background);
+      color: #1f2937;
+    }
+
+    .app {
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    /* -----------------------------
+       ESTONIAN FLAG HEADER
+    ----------------------------- */
+
+    .hero {
+      height: 120px;
+      border-radius: 18px;
+      overflow: hidden;
+      margin-bottom: 16px;
+      position: relative;
+
+      box-shadow:
+        0 8px 20px rgba(17, 24, 39, 0.12);
+
+      background:
+        linear-gradient(
+          to bottom,
+          #4895df 0%,
+          #4895df 33.33%,
+          #161616 33.33%,
+          #161616 66.66%,
+          #ffffff 66.66%,
+          #ffffff 100%
+        );
+    }
+
+    /* CHANGED ONLY: title is exactly centered in the whole flag */
+    .hero-content {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    .hero-badge {
+      background: rgba(255, 255, 255, 0.831);
+      color: #111827;
+      padding: 10px 18px;
+      border-radius: 14px;
+      text-align: center;
+      box-shadow: 0 5px 16px rgba(0, 0, 0, 0.18);
+      backdrop-filter: blur(3px);
+    }
+
+    .hero h1 {
+      margin: 0;
+      font-size: 29px;
+    }
+
+    .hero p {
+      margin: 7px 0 0 0;
+      font-size: 14px;
+      max-width: 640px;
+      color: #374151;
+    }
+
+    /* CHANGED ONLY: mascot sits at the right of the flag */
+    .hero-mascot {
+      position: absolute;
+      right: 20px;
+      bottom: 3px;
+      width: 105px;
+      height: auto;
+      z-index: 3;
+      pointer-events: none;
+    }
+
+    /* -----------------------------
+       GENERAL BOX
+    ----------------------------- */
+
+    .box {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 20px;
+      box-shadow: 0 8px 20px rgba(17, 24, 39, 0.06);
+    }
+
+    h2 {
+      margin-top: 0;
+    }
+
+    /* -----------------------------
+       CHAPTER SELECTION
+    ----------------------------- */
+
+    .chapter-grid {
+      display: grid;
+      grid-template-columns:
+        repeat(auto-fill, minmax(145px, 1fr));
+      gap: 9px;
+      margin: 15px 0 20px 0;
+    }
+
+    .chapter-card {
+      cursor: pointer;
+      position: relative;
+    }
+
+    .chapter-card input {
+      position: absolute;
+      opacity: 0;
+    }
+
+    .chapter-card-content {
+      border: 2px solid #dce5ef;
+      background: #f8fbff;
+      border-radius: 11px;
+      padding: 10px 12px;
+      font-size: 14px;
+      font-weight: bold;
+      transition: 0.15s ease;
+      white-space: nowrap;
+    }
+
+    .chapter-card-content.long-title {
+      font-size: 11px;
+    }
+
+    .chapter-card:hover .chapter-card-content {
+      border-color: #9bbfea;
+      background: #f0f6ff;
+    }
+
+    .chapter-card input:checked + .chapter-card-content {
+      border-color: var(--blue);
+      background: #e8f2ff;
+      color: #175dab;
+    }
+
+    .chapter-number {
+      color: #7a8797;
+      margin-right: 4px;
+    }
+
+    /* -----------------------------
+       BUTTONS
+    ----------------------------- */
+
+    button {
+      border: none;
+      border-radius: 11px;
+      padding: 9px 22px;
+      font-size: 15px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: 0.15s ease;
+    }
+
+    .primary-btn {
+      background: var(--blue);
+      color: white;
+    }
+
+    .primary-btn:hover {
+      background: var(--blue-dark);
+      transform: translateY(-1px);
+    }
+
+    .secondary-btn {
+      background: var(--black);
+      color: white;
+    }
+
+    .button-row {
+      display: flex;
+      justify-content: center;
+    }
+
+    .error-text {
+      color: var(--red);
+      text-align: center;
+      font-weight: bold;
+      font-size: 13px;
+    }
+
+    /* -----------------------------
+       START PAGE TRANSLATION CONTROLS
+    ----------------------------- */
+
+    .translation-controls {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    .translation-mode-btn {
+      background: #eef3f8;
+      color: #334155;
+      border: 1px solid #d6e0ea;
+      border-radius: 9px;
+      padding: 6px 12px;
+      font-size: 12px;
+      font-weight: bold;
+      font-family: Arial, "Segoe UI Emoji", "Apple Color Emoji", sans-serif;
+      box-shadow: none;
+    }
+
+    .translation-mode-btn:hover {
+      background: #e5edf6;
+      transform: none;
+    }
+
+    .translation-mode-btn.active {
+      background: var(--blue);
+      color: white;
+      border-color: var(--blue);
+    }
+
+    .selection-instruction {
+      margin: -3px 0 2px 0;
+      color: #6b7280;
+      font-size: 13px;
+      text-align: center;
+    }
+
+    .section-top-row {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .section-top-row h2 {
+      margin: 0;
+      text-align: center;
+    }
+
+    .section-top-spacer {
+      width: 72px;
+    }
+
+    .back-btn {
+      background: #eef2f7;
+      color: #253247;
+      padding: 7px 13px;
+      font-size: 13px;
+      border: 1px solid #d7e0ea;
+    }
+
+    .back-btn:hover {
+      background: #e4ebf3;
+      transform: none;
+    }
+
+    .quiz-top-row {
+      margin-bottom: 4px;
+    }
+
+    .quiz-back-row {
+      display: flex;
+      justify-content: flex-start;
+      margin-bottom: 8px;
+    }
+
+    /* -----------------------------
+       STUDY OVERLAY
+    ----------------------------- */
+
+    .study-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      background: rgba(15, 23, 42, 0.48);
+      padding: 28px;
+    }
+
+    .study-modal {
+      width: min(620px, 88vw);
+      height: min(760px, 90vh);
+      margin: 0 auto;
+      background: white;
+      border-radius: 18px;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.24);
+      padding: 20px 22px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .study-modal-header {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .study-modal-header h2 {
+      margin: 0;
+      text-align: center;
+    }
+
+    .study-list {
+      overflow-y: auto;
+      border: 1px solid #e1e8f0;
+      border-radius: 14px;
+      background: #fbfdff;
+    }
+
+    .study-row {
+      display: grid;
+      grid-template-columns: 0.65fr 1.35fr;
+      gap: 16px;
+      padding: 10px 18px;
+      border-bottom: 1px solid #edf1f6;
+      font-size: 16px;
+      align-items: start;
+    }
+
+    .study-row:last-child {
+      border-bottom: none;
+    }
+
+    .study-estonian {
+      font-weight: bold;
+      line-height: 1.05;
+    }
+
+    .study-english {
+      color: #425466;
+      line-height: 1.25;
+      white-space: normal;
+    }
+
+    /* -----------------------------
+       QUIZ
+    ----------------------------- */
+
+    #quizSection,
+    #finishedSection {
+      display: none;
+    }
+
+    #quizSection {
+      padding: 16px 20px;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .stat-box {
+      background: #f7f9fc;
+      border: 1px solid #dfe7f0;
+      border-radius: 12px;
+      padding: 8px 10px;
+      text-align: center;
+    }
+
+    .stat-title {
+      font-size: 11px;
+      color: #64748b;
+      text-transform: uppercase;
+      margin-bottom: 2px;
+    }
+
+    .stat-value {
+      font-size: 22px;
+      font-weight: bold;
+    }
+
+    .stat-correct .stat-value {
+      color: var(--green);
+    }
+
+    .stat-wrong .stat-value {
+      color: var(--red);
+    }
+
+    /* PROGRESS BAR */
+
+    .progress-wrap {
+      margin-bottom: 10px;
+    }
+
+    .progress-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: #667085;
+      margin-bottom: 4px;
+    }
+
+    /* CHANGED ONLY: gives mascot space above the bar */
+    .progress-bar-wrap {
+      position: relative;
+      height: 42px;
+      display: flex;
+      align-items: flex-end;
+    }
+
+    .progress-bar {
+      position: relative;
+      width: 100%;
+      height: 9px;
+      background: #e2e9f2;
+      border-radius: 999px;
+      overflow: hidden;
+      z-index: 1;
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: 0%;
+      background: var(--blue);
+      border-radius: 999px;
+      transition: width 0.25s ease;
+    }
+
+    /* CHANGED ONLY: mascot is in front/on top of the bar */
+    .progress-mascot {
+      position: absolute;
+      left: 0%;
+      bottom: -10px;
+      width: 52px;
+      height: auto;
+      transform: translateX(-50%) scaleX(-1);
+      transition: left 0.25s ease;
+      z-index: 10;
+      pointer-events: none;
+    }
+
+    .title-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      margin-bottom: 8px;
+    }
+
+    .title-row h2 {
+      margin: 0;
+      font-size: 19px;
+    }
+
+    .helper-text {
+      font-size: 11px;
+      color: #7b8490;
+      text-align: right;
+    }
+
+    .words-panel {
+      border: 1px solid #e0e8f1;
+      border-radius: 14px;
+      background: #fbfdff;
+      padding: 7px 15px;
+    }
+
+    .word-row {
+      display: grid;
+      grid-template-columns:
+        240px
+        220px
+        1fr;
+      align-items: center;
+      gap: 14px;
+      min-height: 49px;
+      border-bottom: 1px solid #edf1f6;
+    }
+
+    .word-row:last-child {
+      border-bottom: none;
+    }
+
+    .word {
+      font-size: 17px;
+      font-weight: bold;
+    }
+
+    .answer-input {
+      width: 210px;
+      height: 34px;
+      padding: 6px 10px;
+      border-radius: 9px;
+      border: 1px solid #ccd8e6;
+      font-size: 14px;
+      outline: none;
+    }
+
+    .answer-input:focus {
+      border-color: var(--blue);
+      box-shadow:
+        0 0 0 3px rgba(47, 128, 237, 0.10);
+    }
+
+    .answer-input:disabled {
+      background: #f5f7fa;
+    }
+
+    .feedback {
+      font-size: 14px;
+      font-weight: bold;
+    }
+
+    .feedback-pill {
+      padding: 5px 9px;
+      border-radius: 999px;
+      display: inline-block;
+    }
+
+    .feedback.correct .feedback-pill {
+      background: var(--green-soft);
+      color: var(--green);
+    }
+
+    .feedback.wrong .feedback-pill {
+      background: var(--red-soft);
+      color: var(--red);
+      cursor: pointer;
+    }
+
+    .action-row {
+      display: flex;
+      justify-content: center;
+      margin-top: 10px;
+    }
+
+    #checkButton,
+    #nextButton {
+      width: 130px;
+      padding-top: 8px;
+      padding-bottom: 8px;
+    }
+
+    #nextButton {
+      display: none;
+    }
+
+    #finishedSection {
+      text-align: center;
+    }
+
+    .finish-icon {
+      font-size: 42px;
+      margin-bottom: 8px;
+    }
+
+    @media (max-height: 750px) {
+      body {
+        padding-top: 10px;
+        padding-bottom: 10px;
+      }
+
+      .hero {
+        height: 90px;
+        margin-bottom: 10px;
+      }
+
+      .hero h1 {
+        font-size: 25px;
+      }
+
+      .hero p {
+        font-size: 12px;
+      }
+
+      .hero-mascot {
+        width: 90px;
+        right: 40px;
+        bottom: -2px;
+      }
+
+      #quizSection {
+        padding-top: 12px;
+        padding-bottom: 12px;
+      }
+
+      .stats {
+        margin-bottom: 7px;
+      }
+
+      .stat-box {
+        padding: 6px;
+      }
+
+      .stat-value {
+        font-size: 19px;
+      }
+
+      .progress-bar-wrap {
+        height: 34px;
+      }
+
+      .progress-mascot {
+        width: 45px;
+      }
+
+      .word-row {
+        min-height: 44px;
+      }
+
+      .action-row {
+        margin-top: 7px;
+      }
+    }
+
+    @media (max-width: 700px) {
+      body {
+        padding: 8px;
+      }
+
+      .app {
+        max-width: 100%;
+      }
+
+      .hero {
+        height: 76px;
+        margin-bottom: 8px;
+        border-radius: 14px;
+      }
+
+      .hero-badge {
+        padding: 6px 10px;
+        border-radius: 10px;
+      }
+
+      .hero h1 {
+        font-size: 20px;
+      }
+
+      .hero-mascot {
+        width: 68px;
+        right: 10px;
+        bottom: -1px;
+      }
+
+      .box {
+        padding: 12px;
+        border-radius: 14px;
+      }
+
+      .translation-controls {
+        gap: 5px;
+        margin-bottom: 8px;
+        flex-wrap: wrap;
+      }
+
+      .translation-mode-btn {
+        padding: 5px 8px;
+        font-size: 10px;
+      }
+
+      #selectionSection h2 {
+        font-size: 17px;
+        margin-bottom: 6px;
+      }
+
+      .selection-instruction {
+        font-size: 11px;
+        margin-bottom: 4px;
+      }
+
+      .chapter-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 6px;
+        margin: 8px 0 12px 0;
+      }
+
+      .chapter-card-content {
+        padding: 7px 7px;
+        font-size: 11px;
+        line-height: 1.05;
+        white-space: normal;
+        min-height: 36px;
+        display: flex;
+        align-items: center;
+      }
+
+      .chapter-card-content.long-title {
+        font-size: 9.5px;
+      }
+
+      .chapter-number {
+        flex: 0 0 auto;
+      }
+
+      #quizSection {
+        padding: 8px 10px;
+      }
+
+      .quiz-back-row {
+        margin-bottom: 4px;
+      }
+
+      .back-btn {
+        padding: 5px 9px;
+        font-size: 11px;
+      }
+
+      .stats {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 4px;
+        margin-bottom: 4px;
+      }
+
+      .stat-box {
+        padding: 4px 2px;
+        border-radius: 8px;
+      }
+
+      .stat-title {
+        font-size: 7.5px;
+        line-height: 1.05;
+        margin-bottom: 1px;
+      }
+
+      .stat-value {
+        font-size: 16px;
+      }
+
+      .progress-wrap {
+        margin-bottom: 4px;
+      }
+
+      .progress-header {
+        font-size: 9px;
+        margin-bottom: 2px;
+      }
+
+      .progress-bar-wrap {
+        height: 28px;
+      }
+
+      .progress-mascot {
+        width: 36px;
+        bottom: -7px;
+      }
+
+      .title-row {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        align-items: end;
+        gap: 8px;
+        margin-bottom: 4px;
+      }
+
+      .title-row h2 {
+        font-size: 15px;
+        white-space: nowrap;
+      }
+
+      .helper-text {
+        font-size: 8.5px;
+        line-height: 1.1;
+        text-align: right;
+      }
+
+      .words-panel {
+        padding: 3px 8px;
+        border-radius: 10px;
+      }
+
+      .word-row {
+        grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+        gap: 3px 8px;
+        min-height: 39px;
+        padding: 2px 0;
+      }
+
+      .word {
+        font-size: 13px;
+        line-height: 1.05;
+      }
+
+      .answer-input {
+        width: 100%;
+        height: 29px;
+        padding: 4px 7px;
+        font-size: 12px;
+        border-radius: 7px;
+      }
+
+      .feedback {
+        grid-column: 2;
+        font-size: 10.5px;
+        line-height: 1.05;
+      }
+
+      .feedback-pill {
+        padding: 2px 5px;
+      }
+
+      .action-row {
+        margin-top: 5px;
+      }
+
+      #checkButton,
+      #nextButton {
+        width: 105px;
+        padding-top: 6px;
+        padding-bottom: 6px;
+        font-size: 12px;
+      }
+
+      .study-overlay {
+        padding: 12px;
+      }
+
+      .study-modal {
+        width: min(94vw, 620px);
+        height: min(90vh, 760px);
+        padding: 14px;
+        border-radius: 14px;
+      }
+
+      .study-modal-header {
+        gap: 8px;
+        margin-bottom: 8px;
+      }
+
+      .study-modal-header h2 {
+        font-size: 18px;
+      }
+
+      .study-row {
+        gap: 10px;
+        padding: 6px 10px;
+        font-size: 13px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="app">
+
+  <div class="hero">
+    <div class="hero-content">
+      <div class="hero-badge">
+        <h1>Eesti Keele Õppimine</h1>
+        <!-- <p>
+          Clear the word pool by translating every Estonian word correctly.
+        </p> -->
+      </div>
+    </div>
+
+    <img src="kilpkonn.png" alt="Kilpkonn mascot" class="hero-mascot" id="heroMascot">
+  </div>
+
+  
+  <div class="box" id="selectionSection">
+
+    <div class="translation-controls">
+      <button
+        class="translation-mode-btn"
+        id="etEnButton"
+        onclick="selectTranslationMode('et-en')"
+      >
+        Translate 🇪🇪 → 🇬🇧
+      </button>
+
+      <button
+        class="translation-mode-btn"
+        id="enEtButton"
+        onclick="selectTranslationMode('en-et')"
+      >
+        Translate 🇬🇧 → 🇪🇪
+      </button>
+    </div>
+
+    <h2>Vocabulary Chapters</h2>
+
+    <p class="selection-instruction" id="selectionInstruction">
+      Click a category to study its vocabulary.
+    </p>
+
+    <div class="chapter-grid" id="chapterGrid"></div>
+
+    <div class="button-row" id="translationStartRow" style="display:none;">
+      <button class="primary-btn" onclick="startTranslationGame()">
+        Start
+      </button>
+    </div>
+
+    <div id="selectionError" class="error-text"></div>
+
+  </div>
+
+  <div class="study-overlay" id="studyOverlay">
+    <div class="study-modal">
+      <div class="study-modal-header">
+        <button class="back-btn" onclick="closeStudyOverlay()">← Back</button>
+        <h2 id="studyModalTitle"></h2>
+        <div class="section-top-spacer"></div>
+      </div>
+
+      <div class="study-list" id="studyList"></div>
+    </div>
+  </div>
+
+<div class="box" id="quizSection">
+
+    <div class="quiz-back-row">
+      <button class="back-btn" onclick="backToStart()">← Back</button>
+    </div>
+
+    <div class="stats">
+
+      <div class="stat-box">
+        <div class="stat-title">Words Remaining</div>
+        <div class="stat-value" id="totalWords">0</div>
+      </div>
+
+      <div class="stat-box stat-correct">
+        <div class="stat-title">Correct</div>
+        <div class="stat-value" id="correctCount">0</div>
+      </div>
+
+      <div class="stat-box stat-wrong">
+        <div class="stat-title">Wrong</div>
+        <div class="stat-value" id="wrongCount">0</div>
+      </div>
+
+      <div class="stat-box">
+        <div class="stat-title">Correct %</div>
+        <div class="stat-value" id="correctPercent">0%</div>
+      </div>
+
+    </div>
+
+    <div class="progress-wrap">
+
+      <div class="progress-header">
+        <span>Progress</span>
+        <span id="progressLabel">0% completed</span>
+      </div>
+
+      <div class="progress-bar-wrap">
+
+        <img
+          src="kilpkonn.png"
+          alt="Kilpkonn progress mascot"
+          class="progress-mascot"
+          id="progressMascot"
+        >
+
+        <div class="progress-bar">
+          <div class="progress-fill" id="progressFill"></div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <div class="title-row">
+
+      <h2>
+        Translate into English
+      </h2>
+
+      <div class="helper-text">
+        Misspelled?
+        Click ✕ to count it as correct.
+        Click again to undo.
+      </div>
+
+    </div>
+
+    <div class="words-panel">
+      <div id="wordsContainer"></div>
+    </div>
+
+    <div class="action-row">
+
+      <button
+        id="checkButton"
+        class="primary-btn"
+        onclick="checkAnswers()"
+      >
+        OK
+      </button>
+
+      <button
+        id="nextButton"
+        class="secondary-btn"
+        onclick="nextRound()"
+      >
+        Next
+      </button>
+
+    </div>
+
+  </div>
+
+  <div class="box" id="finishedSection">
+
+    <div class="section-top-row">
+      <button class="back-btn" onclick="backToStart()">← Back</button>
+      <div></div>
+      <div class="section-top-spacer"></div>
+    </div>
+
+    <div class="finish-icon">
+      🏆
+    </div>
+
+    <h2>
+      Finished!
+    </h2>
+
+    <p>
+      You cleared every word.
+    </p>
+
+    <button
+      class="primary-btn"
+      onclick="backToStart()"
+    >
+      Start Again
+    </button>
+
+  </div>
+
+</div>
+
+<script>
+
+let chapters = {};
+let chapterOrder = [];
+let chapterDisplayNames = {};
+
+/* ------------------------------------------------
+   VOCABULARY SOURCE
+
+   For GitHub:
+   - leave "github" active
+
+   For desktop testing:
+   - change "github" to "desktop"
+
+   Desktop mode uses the built-in test vocabulary below,
+   so no Excel file is needed locally.
+--------------------------------------------------- */
+
+const VOCABULARY_SOURCE = "github";
+// const VOCABULARY_SOURCE = "desktop";
+
+const DEFAULT_EXCEL_FILE = "estonian_vocabulary.xlsx";
+const VOCABULARY_SHEET = "Vocabulary";
+const ORDER_SHEET = "Chapter Order";
+
+
+/* ------------------------------------------------
+   DESKTOP TEST VOCABULARY
+   Used only when VOCABULARY_SOURCE = "desktop"
+--------------------------------------------------- */
+
+const desktopTestChapters = {
+  colors: [
+    { estonian: "punane", english: "red" },
+    { estonian: "sinine", english: "blue" },
+    { estonian: "roheline", english: "green" },
+    { estonian: "kollane", english: "yellow" },
+    { estonian: "must", english: "black" },
+    { estonian: "valge", english: "white" },
+    { estonian: "pruun", english: "brown" },
+    { estonian: "hall", english: "grey" },
+    { estonian: "roosa", english: "pink" },
+    { estonian: "oranž", english: "orange" }
+  ],
+
+  clothes: [
+    { estonian: "särk", english: "shirt" },
+    { estonian: "püksid", english: "trousers" },
+    { estonian: "kleit", english: "dress" },
+    { estonian: "seelik", english: "skirt" },
+    { estonian: "jope", english: "jacket" },
+    { estonian: "mantel", english: "coat" },
+    { estonian: "müts", english: "hat" },
+    { estonian: "kingad", english: "shoes" },
+    { estonian: "sokid", english: "socks" },
+    { estonian: "kampsun", english: "sweater" }
+  ],
+
+  body: [
+    { estonian: "pea", english: "head" },
+    { estonian: "käsi", english: "hand" },
+    { estonian: "jalg", english: "leg" },
+    { estonian: "silm", english: "eye" },
+    { estonian: "kõrv", english: "ear" },
+    { estonian: "nina", english: "nose" },
+    { estonian: "suu", english: "mouth" },
+    { estonian: "hammas", english: "tooth" },
+    { estonian: "sõrm", english: "finger" },
+    { estonian: "selg", english: "back" }
+  ],
+
+  test: [
+    { estonian: "word1", english: "translation11 / translation12" },
+    { estonian: "word2", english: "translation21 / translation22" },
+    { estonian: "word3", english: "translation31 / translation32" },
+    { estonian: "word4", english: "translation41 / translation42" },
+    { estonian: "word5", english: "translation51 / translation52" }
+    
+  ]
+
+
+};
+
+const desktopTestOrder = [
+  { key: "colors", name: "Colors" },
+  { key: "clothes", name: "Clothes" },
+  { key: "body", name: "Body Parts" },
+  { key: "test", name: "test" }
+];
+
+function normalizeHeader(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase();
+}
+
+function normalizeChapterName(value) {
+  return String(value || "").trim();
+}
+
+function isValidOrder(value) {
+  if (value === null || value === undefined || value === "") {
+    return false;
+  }
+
+  const number = Number(value);
+
+  return Number.isFinite(number) &&
+         Number.isInteger(number) &&
+         number > 0;
+}
+
+function findColumn(headers, acceptedNames) {
+  return headers.findIndex(header =>
+    acceptedNames.includes(header)
+  );
+}
+
+function parseWorkbook(workbook) {
+  const vocabularySheet = workbook.Sheets[VOCABULARY_SHEET];
+  const orderSheet = workbook.Sheets[ORDER_SHEET];
+
+  if (!vocabularySheet) {
+    throw new Error(
+      `Missing sheet "${VOCABULARY_SHEET}".`
+    );
+  }
+
+  if (!orderSheet) {
+    throw new Error(
+      `Missing sheet "${ORDER_SHEET}".`
+    );
+  }
+
+  const vocabularyRows = XLSX.utils.sheet_to_json(
+    vocabularySheet,
+    { header: 1, defval: "" }
+  );
+
+  const orderRows = XLSX.utils.sheet_to_json(
+    orderSheet,
+    { header: 1, defval: "" }
+  );
+
+  if (!vocabularyRows.length || !orderRows.length) {
+    throw new Error("The Excel sheets are empty.");
+  }
+
+  const vocabularyHeaders =
+    vocabularyRows[0].map(normalizeHeader);
+
+  const orderHeaders =
+    orderRows[0].map(normalizeHeader);
+
+  const vocabChapterIndex = findColumn(
+    vocabularyHeaders,
+    ["chapter"]
+  );
+
+  const estonianIndex = findColumn(
+    vocabularyHeaders,
+    ["estonian", "eesti", "et"]
+  );
+
+  const englishIndex = findColumn(
+    vocabularyHeaders,
+    ["english", "inglise", "en"]
+  );
+
+  const orderChapterIndex = findColumn(
+    orderHeaders,
+    ["chapter"]
+  );
+
+  const orderNumberIndex = findColumn(
+    orderHeaders,
+    ["order", "chapter order", "number"]
+  );
+
+  if (
+    vocabChapterIndex === -1 ||
+    estonianIndex === -1 ||
+    englishIndex === -1
+  ) {
+    throw new Error(
+      'The "Vocabulary" sheet must have columns: Chapter, Estonian, English.'
+    );
+  }
+
+  if (
+    orderChapterIndex === -1 ||
+    orderNumberIndex === -1
+  ) {
+    throw new Error(
+      'The "Chapter Order" sheet must have columns: Chapter, Order.'
+    );
+  }
+
+  /* Only chapters with a valid positive whole-number order are used.
+     If a chapter appears more than once, the first valid occurrence is used. */
+  const validChapterRows = [];
+  const seenChapterNames = new Set();
+
+  orderRows.slice(1).forEach((row, rowIndex) => {
+    const chapterName = normalizeChapterName(
+      row[orderChapterIndex]
+    );
+
+    const orderValue = row[orderNumberIndex];
+
+    if (
+      chapterName === "" ||
+      !isValidOrder(orderValue) ||
+      seenChapterNames.has(chapterName)
+    ) {
+      return;
+    }
+
+    seenChapterNames.add(chapterName);
+
+    validChapterRows.push({
+      chapterName: chapterName,
+      order: Number(orderValue),
+      sourceRow: rowIndex
+    });
+  });
+
+  validChapterRows.sort((a, b) => {
+    if (a.order !== b.order) {
+      return a.order - b.order;
+    }
+
+    return a.sourceRow - b.sourceRow;
+  });
+
+  const vocabularyByChapter = {};
+
+  vocabularyRows.slice(1).forEach(row => {
+    const chapterName = normalizeChapterName(
+      row[vocabChapterIndex]
+    );
+
+    const estonian = String(
+      row[estonianIndex] || ""
+    ).trim();
+
+    const english = String(
+      row[englishIndex] || ""
+    ).trim();
+
+    if (
+      chapterName === "" ||
+      estonian === "" ||
+      english === ""
+    ) {
+      return;
+    }
+
+    if (!vocabularyByChapter[chapterName]) {
+      vocabularyByChapter[chapterName] = [];
+    }
+
+    vocabularyByChapter[chapterName].push({
+      estonian: estonian,
+      english: english
+    });
+  });
+
+  const newChapters = {};
+  const newOrder = [];
+  const newDisplayNames = {};
+
+  validChapterRows.forEach((chapterInfo, index) => {
+    const words = vocabularyByChapter[
+      chapterInfo.chapterName
+    ];
+
+    /* A chapter with a valid order but no valid vocabulary rows
+       is skipped because there is nothing to show or quiz. */
+    if (!words || words.length === 0) {
+      return;
+    }
+
+    const key = "chapter_" + index;
+
+    newChapters[key] = words;
+    newOrder.push(key);
+    newDisplayNames[key] = chapterInfo.chapterName;
+  });
+
+  if (newOrder.length === 0) {
+    throw new Error(
+      "No usable chapters were found. Add chapter names with valid positive whole-number orders on the Chapter Order sheet."
+    );
+  }
+
+  chapters = newChapters;
+  chapterOrder = newOrder;
+  chapterDisplayNames = newDisplayNames;
+
+  renderChapterCards();
+}
+
+function renderChapterCards() {
+  const grid = document.getElementById("chapterGrid");
+  grid.innerHTML = "";
+
+  chapterOrder.forEach((chapterKey, index) => {
+    const label = document.createElement("label");
+    label.className = "chapter-card";
+
+    label.onclick = function(event) {
+      handleCategoryClick(event, chapterKey);
+    };
+
+    label.innerHTML = `
+      <input
+        type="checkbox"
+        value="${chapterKey}"
+      >
+      <div class="chapter-card-content ${
+        chapterDisplayNames[chapterKey].length > 18
+          ? "long-title"
+          : ""
+      }">
+        <span class="chapter-number">${index + 1}.</span>
+        ${chapterDisplayNames[chapterKey]}
+      </div>
+    `;
+
+    grid.appendChild(label);
+  });
+}
+
+async function loadVocabularyFromUrl(fileName) {
+  const response = await fetch(
+    fileName + "?v=" + Date.now(),
+    { cache: "no-store" }
+  );
+
+  if (!response.ok) {
+    throw new Error("Could not load Excel file.");
+  }
+
+  const arrayBuffer = await response.arrayBuffer();
+
+  const workbook = XLSX.read(arrayBuffer, {
+    type: "array"
+  });
+
+  parseWorkbook(workbook);
+}
+
+
+
+function loadVocabularyFromDesktopFile(event) {
+  const file = event.target.files[0];
+
+  if (!file) {
+    return;
+  }
+
+  const reader = new FileReader();
+
+  reader.onload = function(loadEvent) {
+    try {
+      const data = new Uint8Array(
+        loadEvent.target.result
+      );
+
+      const workbook = XLSX.read(
+        data,
+        { type: "array" }
+      );
+
+      parseWorkbook(workbook);
+
+      document
+        .getElementById("desktopTestFileName")
+        .textContent = file.name;
+
+      document
+        .getElementById("selectionError")
+        .textContent = "";
+
+    } catch (error) {
+      document
+        .getElementById("selectionError")
+        .textContent =
+          "The desktop vocabulary file could not be read.";
+    }
+  };
+
+  reader.readAsArrayBuffer(file);
+}
+
+
+async function initializeVocabulary() {
+
+  if (VOCABULARY_SOURCE === "desktop") {
+
+    chapters = {};
+    chapterOrder = [];
+    chapterDisplayNames = {};
+
+    desktopTestOrder.forEach((chapterInfo, index) => {
+      const chapterKey = "desktop_" + index;
+
+      chapters[chapterKey] =
+        desktopTestChapters[chapterInfo.key];
+
+      chapterOrder.push(chapterKey);
+
+      chapterDisplayNames[chapterKey] =
+        chapterInfo.name;
+    });
+
+    renderChapterCards();
+    return;
+  }
+
+  if (typeof XLSX === "undefined") {
+    document
+      .getElementById("selectionError")
+      .textContent =
+        "Excel reader could not load. Check your internet connection and refresh the page.";
+    return;
+  }
+
+  try {
+    await loadVocabularyFromUrl(
+      DEFAULT_EXCEL_FILE
+    );
+  } catch (error) {
+    document
+      .getElementById("selectionError")
+      .textContent =
+        "The vocabulary file could not be loaded automatically.";
+  }
+}
+
+
+let remainingWords = [];
+let currentWords = [];
+let correctCount = 0;
+let initialWordCount = 0;
+
+let wronglyAnsweredWords =
+  new Set();
+
+let manuallyCorrectedWords =
+  new Set();
+
+let selectedMode = null;
+
+function clearCategorySelection() {
+  document.querySelectorAll(
+    '.chapter-card input[type="checkbox"]'
+  ).forEach(checkbox => {
+    checkbox.checked = false;
+  });
+
+  document
+    .getElementById("selectionError")
+    .textContent = "";
+}
+
+function selectTranslationMode(mode) {
+
+  /* Clicking the already-selected direction turns quiz mode off
+     and returns the category cards to study mode. */
+  if (selectedMode === mode) {
+    selectedMode = null;
+    clearCategorySelection();
+
+    document
+      .getElementById("etEnButton")
+      .classList.remove("active");
+
+    document
+      .getElementById("enEtButton")
+      .classList.remove("active");
+
+    document
+      .getElementById("selectionInstruction")
+      .textContent =
+        "Click a category to study its vocabulary.";
+
+    document
+      .getElementById("translationStartRow")
+      .style.display = "none";
+
+    return;
+  }
+
+  selectedMode = mode;
+  clearCategorySelection();
+
+  document
+    .getElementById("etEnButton")
+    .classList.toggle(
+      "active",
+      mode === "et-en"
+    );
+
+  document
+    .getElementById("enEtButton")
+    .classList.toggle(
+      "active",
+      mode === "en-et"
+    );
+
+  document
+    .getElementById("selectionInstruction")
+    .textContent =
+      mode === "et-en"
+        ? "Select one or more categories, then press Start. You will translate Estonian into English."
+        : "Select one or more categories, then press Start. You will translate English into Estonian.";
+
+  document
+    .getElementById("translationStartRow")
+    .style.display = "flex";
+}
+
+function handleCategoryClick(event, chapterKey) {
+  if (selectedMode === null) {
+    event.preventDefault();
+    showStudyVocabulary(chapterKey);
+  }
+}
+
+function startTranslationGame() {
+
+  if (chapterOrder.length === 0) {
+    document
+      .getElementById("selectionError")
+      .textContent =
+        "Please load the vocabulary Excel file first.";
+    return;
+  }
+
+  const selected =
+    Array.from(
+      document.querySelectorAll(
+        '.chapter-card input[type="checkbox"]:checked'
+      )
+    );
+
+  if (selected.length === 0) {
+    document
+      .getElementById("selectionError")
+      .textContent =
+        "Please select at least one chapter.";
+
+    return;
+  }
+
+  document
+    .getElementById("selectionError")
+    .textContent = "";
+
+  startQuiz(selected);
+}
+
+function startQuiz(selectedCheckboxes) {
+  remainingWords = [];
+
+  selectedCheckboxes.forEach(checkbox => {
+
+    chapters[checkbox.value].forEach(word => {
+
+      remainingWords.push({
+        estonian: word.estonian,
+        english: word.english
+      });
+
+    });
+
+  });
+
+  correctCount = 0;
+  initialWordCount = remainingWords.length;
+  wronglyAnsweredWords = new Set();
+  manuallyCorrectedWords = new Set();
+
+  document
+    .getElementById("heroMascot")
+    .style.display = "none";
+
+  document
+    .getElementById("selectionSection")
+    .style.display = "none";
+
+  document
+    .getElementById("quizSection")
+    .style.display = "block";
+
+  document
+    .querySelector(".title-row h2")
+    .textContent =
+      selectedMode === "et-en"
+        ? "Translate into English"
+        : "Translate into Estonian";
+
+  updateStats();
+  showNextWords();
+}
+
+function showStudyVocabulary(chapterKey) {
+  const overlay =
+    document.getElementById("studyOverlay");
+
+  const list =
+    document.getElementById("studyList");
+
+  const title =
+    document.getElementById("studyModalTitle");
+
+  title.textContent =
+    chapterDisplayNames[chapterKey] ||
+    chapterKey;
+
+  list.innerHTML = "";
+
+  chapters[chapterKey].forEach(word => {
+    const row =
+      document.createElement("div");
+
+    row.className = "study-row";
+
+    row.innerHTML = `
+      <div class="study-estonian">${word.estonian}</div>
+      <div class="study-english">${word.english}</div>
+    `;
+
+    list.appendChild(row);
+  });
+  overlay.style.display = "block";
+
+  requestAnimationFrame(() => {
+    list.scrollTop = 0;
+  });
+}
+
+function closeStudyOverlay() {
+  document
+    .getElementById("studyOverlay")
+    .style.display = "none";
+}
+
+function backToStart() {
+  closeStudyOverlay();
+
+  document
+    .getElementById("quizSection")
+    .style.display = "none";
+
+  document
+    .getElementById("finishedSection")
+    .style.display = "none";
+
+  document
+    .getElementById("selectionSection")
+    .style.display = "block";
+
+  document
+    .getElementById("heroMascot")
+    .style.display = "block";
+
+  clearCategorySelection();
+
+  document
+    .getElementById("translationStartRow")
+    .style.display = "none";
+
+  document
+    .getElementById("selectionInstruction")
+    .textContent =
+      "Click a category to study its vocabulary.";
+
+  document
+    .getElementById("etEnButton")
+    .classList.remove("active");
+
+  document
+    .getElementById("enEtButton")
+    .classList.remove("active");
+
+  remainingWords = [];
+  currentWords = [];
+  correctCount = 0;
+  initialWordCount = 0;
+  wronglyAnsweredWords = new Set();
+  manuallyCorrectedWords = new Set();
+  selectedMode = null;
+}
+
+function showNextWords() {
+
+  const shuffled =
+    [...remainingWords]
+      .sort(() => Math.random() - 0.5);
+
+  currentWords =
+    shuffled.slice(
+      0,
+      Math.min(5, shuffled.length)
+    );
+
+  const container =
+    document.getElementById("wordsContainer");
+
+  container.innerHTML = "";
+
+  currentWords.forEach((word, index) => {
+
+    const row =
+      document.createElement("div");
+
+    row.className =
+      "word-row";
+
+    row.innerHTML = `
+
+      <div class="word">
+        ${index + 1}. ${
+          selectedMode === "et-en"
+            ? word.estonian
+            : word.english
+        }
+      </div>
+
+      <input
+        type="text"
+        id="answer-${index}"
+        class="answer-input"
+        autocomplete="off"
+      >
+
+      <div
+        id="feedback-${index}"
+        class="feedback"
+      ></div>
+
+    `;
+
+    container.appendChild(row);
+
+  });
+
+  document
+    .getElementById("checkButton")
+    .style.display = "block";
+
+  document
+    .getElementById("nextButton")
+    .style.display = "none";
+
+  if (currentWords.length > 0) {
+
+    document
+      .getElementById("answer-0")
+      .focus();
+
+  }
+}
+
+
+function getAcceptedAnswers(answerText) {
+  return String(answerText || "")
+    .split("/")
+    .map(answer => answer.trim().toLowerCase())
+    .filter(answer => answer !== "");
+}
+
+function checkAnswers() {
+
+  let correctWordsThisRound = [];
+
+  currentWords.forEach((word, index) => {
+
+    const input =
+      document.getElementById(`answer-${index}`);
+
+    const feedback =
+      document.getElementById(`feedback-${index}`);
+
+    const userAnswer =
+      input.value
+        .trim()
+        .toLowerCase();
+
+    const answerText =
+      selectedMode === "et-en"
+        ? word.english
+        : word.estonian;
+
+    const acceptedAnswers =
+      getAcceptedAnswers(answerText);
+
+    const shownCorrectAnswer =
+      answerText;
+
+    input.disabled = true;
+
+    if (acceptedAnswers.includes(userAnswer)) {
+
+      feedback.className =
+        "feedback correct";
+
+      feedback.innerHTML = `
+        <span class="feedback-pill">
+          ✓ ${shownCorrectAnswer}
+        </span>
+      `;
+
+      correctWordsThisRound.push(word);
+      correctCount++;
+
+    } else {
+
+      feedback.className =
+        "feedback wrong";
+
+      feedback.innerHTML = `
+        <span
+          id="toggle-${index}"
+          class="feedback-pill"
+          onclick="toggleCorrection(${index})"
+        >
+          ✕ ${shownCorrectAnswer}
+        </span>
+      `;
+
+      wronglyAnsweredWords.add(word.estonian + "||" + word.english);
+    }
+
+  });
+
+  remainingWords =
+    remainingWords.filter(
+      word =>
+        !correctWordsThisRound.some(
+          correct =>
+            correct.estonian === word.estonian &&
+            correct.english === word.english
+        )
+    );
+
+  updateStats();
+
+  document
+    .getElementById("checkButton")
+    .style.display = "none";
+
+  document
+    .getElementById("nextButton")
+    .style.display = "block";
+}
+
+function toggleCorrection(index) {
+
+  const word =
+    currentWords[index];
+
+  const feedback =
+    document.getElementById(`feedback-${index}`);
+
+  const toggle =
+    document.getElementById(`toggle-${index}`);
+
+  const key =
+    word.estonian + "||" + word.english;
+
+  const shownCorrectAnswer =
+    selectedMode === "et-en"
+      ? word.english
+      : word.estonian;
+
+  if (!manuallyCorrectedWords.has(key)) {
+
+    manuallyCorrectedWords.add(key);
+
+    feedback.className =
+      "feedback correct";
+
+    toggle.textContent =
+      "✓ " + shownCorrectAnswer;
+
+    wronglyAnsweredWords.delete(key);
+    correctCount++;
+
+    remainingWords =
+      remainingWords.filter(
+        remaining =>
+          !(
+            remaining.estonian === word.estonian &&
+            remaining.english === word.english
+          )
+      );
+
+  } else {
+
+    manuallyCorrectedWords.delete(key);
+
+    feedback.className =
+      "feedback wrong";
+
+    toggle.textContent =
+      "✕ " + shownCorrectAnswer;
+
+    wronglyAnsweredWords.add(key);
+    correctCount--;
+
+    const alreadyRemaining =
+      remainingWords.some(
+        remaining =>
+          remaining.estonian === word.estonian &&
+          remaining.english === word.english
+      );
+
+    if (!alreadyRemaining) {
+
+      remainingWords.push({
+        estonian: word.estonian,
+        english: word.english
+      });
+
+    }
+  }
+
+  updateStats();
+}
+
+function nextRound() {
+
+  if (remainingWords.length === 0) {
+    finishQuiz();
+  } else {
+    showNextWords();
+  }
+}
+
+function updateStats() {
+
+  document
+    .getElementById("totalWords")
+    .textContent =
+      remainingWords.length;
+
+  document
+    .getElementById("correctCount")
+    .textContent =
+      correctCount;
+
+  document
+    .getElementById("wrongCount")
+    .textContent =
+      wronglyAnsweredWords.size;
+
+  const totalAnswered =
+    correctCount +
+    wronglyAnsweredWords.size;
+
+  let percentage = 0;
+
+  if (totalAnswered > 0) {
+
+    percentage =
+      Math.round(
+        (correctCount / totalAnswered) * 100
+      );
+
+  }
+
+  document
+    .getElementById("correctPercent")
+    .textContent =
+      percentage + "%";
+
+  let progressPercent = 0;
+
+  if (initialWordCount > 0) {
+
+    progressPercent =
+      Math.round(
+        (correctCount / initialWordCount) * 100
+      );
+
+  }
+
+  document
+    .getElementById("progressFill")
+    .style.width =
+      progressPercent + "%";
+
+  document
+    .getElementById("progressLabel")
+    .textContent =
+      progressPercent + "% completed";
+
+  updateMascotPosition(progressPercent);
+}
+
+function updateMascotPosition(progressPercent) {
+
+  const mascot =
+    document.getElementById("progressMascot");
+
+  const clamped =
+    Math.max(
+      0,
+      Math.min(100, progressPercent)
+    );
+
+  mascot.style.left =
+    `calc(${clamped}% - 1px)`;
+}
+
+function finishQuiz() {
+
+  document
+    .getElementById("quizSection")
+    .style.display = "none";
+
+  document
+    .getElementById("finishedSection")
+    .style.display = "block";
+}
+
+
+
+document.addEventListener("keydown", function(event) {
+
+  const active = document.activeElement;
+
+  if (
+    active &&
+    active.classList.contains("answer-input")
+  ) {
+
+    const inputs = Array.from(
+      document.querySelectorAll(
+        ".answer-input:not(:disabled)"
+      )
+    );
+
+    const currentIndex =
+      inputs.indexOf(active);
+
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+
+      const nextIndex =
+        currentIndex === inputs.length - 1
+          ? 0
+          : currentIndex + 1;
+
+      inputs[nextIndex].focus();
+      return;
+    }
+
+    if (event.key === "ArrowUp") {
+      event.preventDefault();
+
+      const previousIndex =
+        currentIndex === 0
+          ? inputs.length - 1
+          : currentIndex - 1;
+
+      inputs[previousIndex].focus();
+      return;
+    }
+  }
+
+  if (event.key === "Escape") {
+    if (
+      document.getElementById("studyOverlay")
+        .style.display === "block"
+    ) {
+      closeStudyOverlay();
+      return;
+    }
+  }
+
+  if (event.key === "Enter") {
+
+    const selectionSection =
+      document.getElementById("selectionSection");
+
+    const quizSection =
+      document.getElementById("quizSection");
+
+    if (
+      selectionSection.style.display !== "none" &&
+      selectedMode !== null
+    ) {
+      event.preventDefault();
+      startTranslationGame();
+      return;
+    }
+
+    if (
+      quizSection.style.display === "block"
+    ) {
+      event.preventDefault();
+
+      const checkButton =
+        document.getElementById("checkButton");
+
+      const nextButton =
+        document.getElementById("nextButton");
+
+      if (
+        checkButton.style.display !== "none"
+      ) {
+        checkAnswers();
+      } else if (
+        nextButton.style.display !== "none"
+      ) {
+        nextRound();
+      }
+    }
+  }
+
+});
+
+initializeVocabulary();
+
+</script>
+
+</body>
+</html>
