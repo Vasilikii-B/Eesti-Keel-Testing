@@ -211,17 +211,18 @@
     }
 
     .legend-swatch {
-      width: 18px;
-      height: 10px;
-      border-radius: 3px;
-      border: 1px solid rgba(0,0,0,0.08);
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+      border: none;
+      flex: 0 0 11px;
     }
 
-    .legend-noun { background: #eaf4ff; border-color: #9fc5ef; }
-    .legend-adjective { background: #eaf8ef; border-color: #9ed8b6; }
-    .legend-verb { background: #fdeeee; border-color: #efb2b2; }
-    .legend-adverb { background: var(--orange-soft); border-color: #efc48d; }
-    .legend-other { background: var(--gray-soft); border-color: #cbd2d9; }
+    .legend-noun { background: #175dab; }
+    .legend-adjective { background: #187744; }
+    .legend-verb { background: #a73535; }
+    .legend-adverb { background: #a65b0d; }
+    .legend-other { background: #4d5966; }
 
     .chapter-card:hover .chapter-card-content {
       filter: brightness(0.98);
@@ -236,31 +237,31 @@
     .chapter-card-content.category-noun {
       border-color: #9fc5ef;
       background: #eaf4ff;
-      color: #175dab;
+      color: #161616;
     }
 
     .chapter-card-content.category-adjective {
       border-color: #9ed8b6;
       background: #eaf8ef;
-      color: #187744;
+      color: #161616;
     }
 
     .chapter-card-content.category-verb {
       border-color: #efb2b2;
       background: #fdeeee;
-      color: #a73535;
+      color: #161616;
     }
 
     .chapter-card-content.category-adverb {
       border-color: #efc48d;
       background: var(--orange-soft);
-      color: #a65b0d;
+      color: #161616;
     }
 
     .chapter-card-content.category-other {
       border-color: #cbd2d9;
       background: var(--gray-soft);
-      color: #4d5966;
+      color: #161616;
     }
 
     .chapter-card input:checked + .chapter-card-content.category-noun {
