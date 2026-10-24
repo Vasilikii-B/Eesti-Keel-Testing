@@ -573,9 +573,28 @@
 
     .special-study-example,
     .special-study-example-translation {
-      white-space: pre-line;
+      white-space: normal;
       font-size: 11.5px;
       line-height: 1.05;
+    }
+
+    .special-example-line {
+      display: block;
+      padding: 1px 0;
+    }
+
+    .special-example-line + .special-example-line {
+      margin-top: 3px;
+      padding-top: 4px;
+      border-top: 1px solid #edf1f6;
+    }
+
+    .special-word-desktop {
+      display: inline;
+    }
+
+    .special-word-mobile {
+      display: none;
     }
 
     #quizSection.special-quiz-mode .word-row {
@@ -1134,6 +1153,20 @@
         font-size: 10.5px;
       }
 
+      .special-word-desktop {
+        display: none;
+      }
+
+      .special-word-mobile {
+        display: inline;
+        white-space: pre-line;
+      }
+
+      .special-example-line + .special-example-line {
+        margin-top: 4px;
+        padding-top: 4px;
+      }
+
       .special-study-section {
         padding: 8px;
         font-size: 11px;
@@ -1632,6 +1665,37 @@ function formatSpecialEnglishMeaning(value) {
   ).join("");
 }
 
+function formatSpecialExampleHtml(html) {
+  const text = String(html || "").trim();
+  if (!text) return "";
+
+  const parts = text
+    .split(/(?:<br\s*\/?\s*>|\r?\n)+/i)
+    .map(part => part.trim())
+    .filter(Boolean);
+
+  if (parts.length <= 1) {
+    return `<span class="special-example-line">${text}</span>`;
+  }
+
+  return parts
+    .map(part => `<span class="special-example-line">${part}</span>`)
+    .join("");
+}
+
+function formatSpecialEstonianDisplay(html, plainText) {
+  const desktop = String(html || escapeHtml(plainText || ""));
+  const mobile = String(plainText || "")
+    .split(/\s*[—–]\s*/g)
+    .map(part => part.trim())
+    .filter(Boolean)
+    .map(escapeHtml)
+    .join("<br>");
+
+  return `<span class="special-word-desktop">${desktop}</span>` +
+         `<span class="special-word-mobile">${mobile}</span>`;
+}
+
 function parsePronounsProadverbsSheet(sheet) {
   if (!sheet || !sheet["!ref"]) {
     return { quizWords: [], studyRows: [] };
@@ -1684,10 +1748,10 @@ function parsePronounsProadverbsSheet(sheet) {
       estonian,
       english,
       groupSeparator: hasGroupSeparator,
-      estonianHtml: getCellDisplayHtml(aCell),
+      estonianHtml: formatSpecialEstonianDisplay(getCellDisplayHtml(aCell), estonian),
       englishHtml: formatSpecialEnglishMeaning(english),
-      exampleHtml: getCellDisplayHtml(cCell),
-      exampleTranslationHtml: getCellDisplayHtml(dCell)
+      exampleHtml: formatSpecialExampleHtml(getCellDisplayHtml(cCell)),
+      exampleTranslationHtml: formatSpecialExampleHtml(getCellDisplayHtml(dCell))
     };
 
     studyRows.push(record);
@@ -2451,7 +2515,9 @@ function showNextWords() {
       <div class="word">
         ${index + 1}. ${
           selectedMode === "et-en"
-            ? escapeHtml(word.estonian)
+            ? (word.specialPronounsProadverbs
+                ? formatSpecialEstonianDisplay(escapeHtml(word.estonian), word.estonian)
+                : escapeHtml(word.estonian))
             : escapeHtml(word.english)
         }
       </div>
