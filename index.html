@@ -498,7 +498,9 @@
 
     /* Special four-column study view for pronouns / proadverbs */
     .study-modal.special-study-modal {
-      width: min(1320px, 98vw);
+      width: min(1320px, 100%);
+      margin-left: auto;
+      margin-right: auto;
     }
 
     .study-list.special-study-list {
@@ -526,10 +528,10 @@
     }
 
     .special-study-row {
-      padding: 8px 12px;
+      padding: 6px 12px;
       border-bottom: 1px solid #edf1f6;
       font-size: 13px;
-      line-height: 1.25;
+      line-height: 1.12;
     }
 
     .special-study-row.group-separator {
@@ -544,20 +546,36 @@
 
     .special-study-word {
       font-weight: bold;
-      white-space: nowrap;
+      white-space: pre-line;
       font-size: 13px;
+      line-height: 1.08;
       letter-spacing: -0.01em;
+      text-align: center;
+      align-self: center;
     }
 
     .special-study-translation {
       color: #425466;
+      white-space: pre-line;
+      line-height: 1.08;
+      text-align: center;
+      align-self: center;
+    }
+
+    .special-study-translation .translation-note {
+      display: block;
+      margin-top: 1px;
+      font-size: 9px;
+      line-height: 1.05;
+      color: #657386;
+      font-weight: normal;
     }
 
     .special-study-example,
     .special-study-example-translation {
       white-space: pre-line;
-      font-size: 12px;
-      line-height: 1.22;
+      font-size: 11.5px;
+      line-height: 1.05;
     }
 
     #quizSection.special-quiz-mode .word-row {
@@ -1097,7 +1115,7 @@
       }
 
       .study-modal.special-study-modal {
-        width: 96vw;
+        width: 100%;
       }
 
       .special-study-header,
@@ -1593,6 +1611,27 @@ function hasStrongTopBorder(cell) {
 
 const SPECIAL_GROUP_START_ROWS = new Set([3, 13, 24, 39, 42, 59, 66, 75, 81, 89, 92, 105]);
 
+function stripParentheticalNotes(value) {
+  return String(value || "")
+    .replace(/\s*\([^)]*\)/g, "")
+    .replace(/\s*\/\s*$/g, "")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
+
+function formatSpecialEnglishMeaning(value) {
+  const text = String(value || "").trim();
+  const parts = text.split(/\n+/);
+  const main = escapeHtml(parts.shift() || "");
+  const notes = parts
+    .join(" ")
+    .match(/\([^)]*\)/g) || [];
+
+  return main + notes.map(note =>
+    `<span class="translation-note">${escapeHtml(note)}</span>`
+  ).join("");
+}
+
 function parsePronounsProadverbsSheet(sheet) {
   if (!sheet || !sheet["!ref"]) {
     return { quizWords: [], studyRows: [] };
@@ -1646,13 +1685,17 @@ function parsePronounsProadverbsSheet(sheet) {
       english,
       groupSeparator: hasGroupSeparator,
       estonianHtml: getCellDisplayHtml(aCell),
-      englishHtml: getCellDisplayHtml(bCell),
+      englishHtml: formatSpecialEnglishMeaning(english),
       exampleHtml: getCellDisplayHtml(cCell),
       exampleTranslationHtml: getCellDisplayHtml(dCell)
     };
 
     studyRows.push(record);
-    quizWords.push({ estonian, english });
+    quizWords.push({
+      estonian,
+      english: stripParentheticalNotes(english),
+      specialPronounsProadverbs: true
+    });
   }
 
   return { quizWords, studyRows };
@@ -2208,7 +2251,8 @@ function startQuiz(selectedCheckboxes) {
 
       remainingWords.push({
         estonian: word.estonian,
-        english: word.english
+        english: word.english,
+        specialPronounsProadverbs: Boolean(word.specialPronounsProadverbs)
       });
 
     });
@@ -2605,7 +2649,8 @@ function toggleCorrection(index) {
 
       remainingWords.push({
         estonian: word.estonian,
-        english: word.english
+        english: word.english,
+        specialPronounsProadverbs: Boolean(word.specialPronounsProadverbs)
       });
 
     }
