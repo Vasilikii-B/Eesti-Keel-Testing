@@ -554,7 +554,7 @@
       padding-bottom: 9px;
     }
 
-    .special-study-row:last-child {
+    .special-study-row:last-child:not(.group-end) {
       border-bottom: none;
     }
 
@@ -1820,6 +1820,29 @@ function hasStrongRightBorder(cell) {
 
 const SPECIAL_GROUP_START_ROWS = new Set([3, 13, 24, 39, 42, 59, 66, 75, 81, 89, 92, 105]);
 
+/* Excel group brackets for the Conjunctions sheet.
+   SheetJS preserves rich text but does not reliably expose cell border styles in-browser,
+   so these boundaries mirror the medium outside borders in the workbook. */
+const CONJUNCTION_GROUP_RANGES = [
+  [2, 4],
+  [5, 30],
+  [31, 39],
+  [40, 53],
+  [54, 61]
+];
+
+function getConjunctionGroupState(excelRowNumber) {
+  const range = CONJUNCTION_GROUP_RANGES.find(([start, end]) =>
+    excelRowNumber >= start && excelRowNumber <= end
+  );
+  if (!range) return { groupBox: false, groupStart: false, groupEnd: false };
+  return {
+    groupBox: true,
+    groupStart: excelRowNumber === range[0],
+    groupEnd: excelRowNumber === range[1]
+  };
+}
+
 function stripParentheticalNotes(value) {
   return String(value || "")
     .replace(/\s*\([^)]*\)/g, "")
@@ -1976,21 +1999,9 @@ function parseConjunctionsSheet(sheet) {
     if (!estonian && !english && !example && !exampleTranslation) continue;
     if (!estonian || !english) continue;
 
-    const groupStart =
-      hasStrongTopBorder(aCell) ||
-      hasStrongTopBorder(bCell) ||
-      hasStrongTopBorder(cCell) ||
-      hasStrongTopBorder(dCell);
-
-    const groupEnd =
-      hasStrongBottomBorder(aCell) ||
-      hasStrongBottomBorder(bCell) ||
-      hasStrongBottomBorder(cCell) ||
-      hasStrongBottomBorder(dCell);
-
-    const groupBox =
-      hasStrongLeftBorder(aCell) ||
-      hasStrongRightBorder(dCell);
+    const excelRowNumber = r + 1;
+    const { groupStart, groupEnd, groupBox } =
+      getConjunctionGroupState(excelRowNumber);
 
     const record = {
       type: "word",
