@@ -536,10 +536,22 @@
       line-height: 1.12;
     }
 
-    .special-study-row.group-separator {
+    /* Excel medium outside borders: draw each special-study group as a bracketed box. */
+    .special-study-row.group-box {
+      border-left: 2px solid #98a6b5;
+      border-right: 2px solid #98a6b5;
+    }
+
+    .special-study-row.group-start {
       border-top: 2px solid #98a6b5;
-      margin-top: 3px;
-      padding-top: 11px;
+      margin-top: 4px;
+      padding-top: 9px;
+    }
+
+    .special-study-row.group-end {
+      border-bottom: 2px solid #98a6b5;
+      margin-bottom: 4px;
+      padding-bottom: 9px;
     }
 
     .special-study-row:last-child {
@@ -1647,7 +1659,11 @@ function excelRichTextXmlToHtml(xml, fallbackText = "") {
           /* Theme 1 is black; positive tint is Excel's lighter gray variant. */
           styles.push(tint > 0.35 ? "color:#7F7F7F" : "color:#000000");
         } else if (theme === "4") {
-          styles.push("color:#4472C4");
+          /* Excel theme Accent 1: normalize to the light blue used in this workbook. */
+          styles.push("color:#5B9BD5");
+        } else if (theme === "9") {
+          /* Excel theme Accent 6: normalize to the orange used in this workbook. */
+          styles.push("color:#ED7D31");
         }
       }
       if (bold) styles.push("font-weight:700");
@@ -1695,7 +1711,11 @@ function excelRunStyle(run) {
     } else if (theme === "1") {
       styles.push(tint > 0.35 ? "color:#7F7F7F" : "color:#000000");
     } else if (theme === "4") {
-      styles.push("color:#4472C4");
+      /* Excel theme Accent 1: normalize to the light blue used in this workbook. */
+      styles.push("color:#5B9BD5");
+    } else if (theme === "9") {
+      /* Excel theme Accent 6: normalize to the orange used in this workbook. */
+      styles.push("color:#ED7D31");
     }
   }
 
@@ -1774,11 +1794,28 @@ function formatSpecialCellFromExcel(cell, smallParentheticalNotes = false) {
     .join("")}</span>`;
 }
 
-function hasStrongTopBorder(cell) {
+function hasStrongBorder(cell, side) {
   const style = cell && cell.s;
   const border = style && typeof style === "object" ? style.border : null;
-  const topStyle = border && border.top ? String(border.top.style || "").toLowerCase() : "";
-  return ["medium", "thick", "double"].includes(topStyle);
+  const sideBorder = border && border[side] ? border[side] : null;
+  const borderStyle = sideBorder ? String(sideBorder.style || "").toLowerCase() : "";
+  return ["medium", "thick", "double"].includes(borderStyle);
+}
+
+function hasStrongTopBorder(cell) {
+  return hasStrongBorder(cell, "top");
+}
+
+function hasStrongBottomBorder(cell) {
+  return hasStrongBorder(cell, "bottom");
+}
+
+function hasStrongLeftBorder(cell) {
+  return hasStrongBorder(cell, "left");
+}
+
+function hasStrongRightBorder(cell) {
+  return hasStrongBorder(cell, "right");
 }
 
 const SPECIAL_GROUP_START_ROWS = new Set([3, 13, 24, 39, 42, 59, 66, 75, 81, 89, 92, 105]);
@@ -1875,18 +1912,30 @@ function parsePronounsProadverbsSheet(sheet) {
     if (!estonian || !english) continue;
 
     const excelRowNumber = r + 1;
-    const hasGroupSeparator =
+    const groupStart =
       hasStrongTopBorder(aCell) ||
       hasStrongTopBorder(bCell) ||
       hasStrongTopBorder(cCell) ||
       hasStrongTopBorder(dCell) ||
       SPECIAL_GROUP_START_ROWS.has(excelRowNumber);
 
+    const groupEnd =
+      hasStrongBottomBorder(aCell) ||
+      hasStrongBottomBorder(bCell) ||
+      hasStrongBottomBorder(cCell) ||
+      hasStrongBottomBorder(dCell);
+
+    const groupBox =
+      hasStrongLeftBorder(aCell) ||
+      hasStrongRightBorder(dCell);
+
     const record = {
       type: "word",
       estonian,
       english,
-      groupSeparator: hasGroupSeparator,
+      groupStart,
+      groupEnd,
+      groupBox,
       estonianHtml: formatSpecialCellFromExcel(aCell),
       englishHtml: formatSpecialCellFromExcel(bCell, true),
       exampleHtml: formatSpecialCellFromExcel(cCell),
@@ -1927,17 +1976,29 @@ function parseConjunctionsSheet(sheet) {
     if (!estonian && !english && !example && !exampleTranslation) continue;
     if (!estonian || !english) continue;
 
-    const hasGroupSeparator =
+    const groupStart =
       hasStrongTopBorder(aCell) ||
       hasStrongTopBorder(bCell) ||
       hasStrongTopBorder(cCell) ||
       hasStrongTopBorder(dCell);
 
+    const groupEnd =
+      hasStrongBottomBorder(aCell) ||
+      hasStrongBottomBorder(bCell) ||
+      hasStrongBottomBorder(cCell) ||
+      hasStrongBottomBorder(dCell);
+
+    const groupBox =
+      hasStrongLeftBorder(aCell) ||
+      hasStrongRightBorder(dCell);
+
     const record = {
       type: "word",
       estonian,
       english,
-      groupSeparator: hasGroupSeparator,
+      groupStart,
+      groupEnd,
+      groupBox,
       estonianHtml: formatSpecialCellFromExcel(aCell),
       englishHtml: formatSpecialCellFromExcel(bCell),
       exampleHtml: formatSpecialCellFromExcel(cCell),
@@ -2636,7 +2697,12 @@ function showStudyVocabulary(chapterKey) {
       }
 
       const row = document.createElement("div");
-      row.className = "special-study-row" + (item.groupSeparator ? " group-separator" : "");
+      const groupClasses = [
+        item.groupBox ? "group-box" : "",
+        item.groupStart ? "group-start" : "",
+        item.groupEnd ? "group-end" : ""
+      ].filter(Boolean).join(" ");
+      row.className = "special-study-row" + (groupClasses ? " " + groupClasses : "");
       row.innerHTML = `
         <div class="special-study-word">${item.estonianHtml}</div>
         <div class="special-study-translation">${item.englishHtml}</div>
