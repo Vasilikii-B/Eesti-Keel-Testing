@@ -1456,6 +1456,8 @@ const VOCABULARY_SHEET = "Vocabulary";
 const ORDER_SHEET = "Chapter Order";
 const PRONOUNS_PROADVERBS_SHEET = "pronouns - proadverbs";
 const PRONOUNS_PROADVERBS_CHAPTER = "Pronouns - Proadverbs";
+const CONJUNCTIONS_SHEET = "conjunctions";
+const CONJUNCTIONS_CHAPTER = "Conjunctions";
 
 
 /* ------------------------------------------------
@@ -1902,10 +1904,62 @@ function parsePronounsProadverbsSheet(sheet) {
   return { quizWords, studyRows };
 }
 
+function parseConjunctionsSheet(sheet) {
+  if (!sheet || !sheet["!ref"]) {
+    return { quizWords: [], studyRows: [] };
+  }
+
+  const range = XLSX.utils.decode_range(sheet["!ref"]);
+  const quizWords = [];
+  const studyRows = [];
+
+  for (let r = range.s.r + 1; r <= range.e.r; r++) {
+    const aCell = getSheetCell(sheet, r, 0);
+    const bCell = getSheetCell(sheet, r, 1);
+    const cCell = getSheetCell(sheet, r, 2);
+    const dCell = getSheetCell(sheet, r, 3);
+
+    const estonian = getCellPlainText(aCell);
+    const english = getCellPlainText(bCell);
+    const example = getCellPlainText(cCell);
+    const exampleTranslation = getCellPlainText(dCell);
+
+    if (!estonian && !english && !example && !exampleTranslation) continue;
+    if (!estonian || !english) continue;
+
+    const hasGroupSeparator =
+      hasStrongTopBorder(aCell) ||
+      hasStrongTopBorder(bCell) ||
+      hasStrongTopBorder(cCell) ||
+      hasStrongTopBorder(dCell);
+
+    const record = {
+      type: "word",
+      estonian,
+      english,
+      groupSeparator: hasGroupSeparator,
+      estonianHtml: formatSpecialCellFromExcel(aCell),
+      englishHtml: formatSpecialCellFromExcel(bCell),
+      exampleHtml: formatSpecialCellFromExcel(cCell),
+      exampleTranslationHtml: formatSpecialCellFromExcel(dCell)
+    };
+
+    studyRows.push(record);
+    quizWords.push({
+      estonian,
+      english,
+      specialPronounsProadverbs: true
+    });
+  }
+
+  return { quizWords, studyRows };
+}
+
 function parseWorkbook(workbook) {
   const vocabularySheet = workbook.Sheets[VOCABULARY_SHEET];
   const orderSheet = workbook.Sheets[ORDER_SHEET];
   const pronounsProadverbsSheet = workbook.Sheets[PRONOUNS_PROADVERBS_SHEET];
+  const conjunctionsSheet = workbook.Sheets[CONJUNCTIONS_SHEET];
 
   if (!vocabularySheet) {
     throw new Error(
@@ -2101,6 +2155,23 @@ function parseWorkbook(workbook) {
       newChapters[specialKey] = special.quizWords;
       newOrder.push(specialKey);
       newDisplayNames[specialKey] = PRONOUNS_PROADVERBS_CHAPTER;
+      newCategories[specialKey] = "Other";
+      newStudyLayouts[specialKey] = "pronouns-proadverbs";
+      newSpecialStudyRows[specialKey] = special.studyRows;
+    }
+  }
+
+  /* The dedicated conjunctions sheet uses the same four-column study layout.
+     Excel top borders define group separators; Alt+Enter creates thin internal
+     separators, and rich-text colors/bold styling are preserved from the workbook. */
+  if (conjunctionsSheet) {
+    const special = parseConjunctionsSheet(conjunctionsSheet);
+
+    if (special.quizWords.length > 0) {
+      const specialKey = "chapter_conjunctions";
+      newChapters[specialKey] = special.quizWords;
+      newOrder.push(specialKey);
+      newDisplayNames[specialKey] = CONJUNCTIONS_CHAPTER;
       newCategories[specialKey] = "Other";
       newStudyLayouts[specialKey] = "pronouns-proadverbs";
       newSpecialStudyRows[specialKey] = special.studyRows;
