@@ -536,25 +536,14 @@
       line-height: 1.12;
     }
 
-    /* Excel medium outside borders: draw each special-study group as a bracketed box. */
-    .special-study-row.group-box {
-      border-left: 2px solid #98a6b5;
-      border-right: 2px solid #98a6b5;
-    }
-
+    /* Group separators: identical to the Pronouns - Proadverbs layout. */
     .special-study-row.group-start {
       border-top: 2px solid #98a6b5;
-      margin-top: 4px;
-      padding-top: 9px;
+      margin-top: 3px;
+      padding-top: 11px;
     }
 
-    .special-study-row.group-end {
-      border-bottom: 2px solid #98a6b5;
-      margin-bottom: 4px;
-      padding-bottom: 9px;
-    }
-
-    .special-study-row:last-child:not(.group-end) {
+    .special-study-row:last-child {
       border-bottom: none;
     }
 
@@ -1837,9 +1826,10 @@ function getConjunctionGroupState(excelRowNumber) {
   );
   if (!range) return { groupBox: false, groupStart: false, groupEnd: false };
   return {
-    groupBox: true,
-    groupStart: excelRowNumber === range[0],
-    groupEnd: excelRowNumber === range[1]
+    groupBox: false,
+    /* Match Pronouns - Proadverbs: separator only BEFORE later groups, not above the first group. */
+    groupStart: range[0] !== CONJUNCTION_GROUP_RANGES[0][0] && excelRowNumber === range[0],
+    groupEnd: false
   };
 }
 
