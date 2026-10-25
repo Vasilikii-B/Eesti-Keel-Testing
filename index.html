@@ -505,14 +505,16 @@
 
     .study-list.special-study-list {
       background: #ffffff;
+      border-color: #aeb8c4;
+      overflow-x: hidden;
     }
 
     .special-study-header,
     .special-study-row {
       display: grid;
-      grid-template-columns: minmax(305px, 1.75fr) minmax(170px, 1fr) minmax(235px, 1.45fr) minmax(235px, 1.45fr);
-      gap: 10px;
-      align-items: start;
+      grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.85fr) minmax(0, 1.15fr) minmax(0, 1.15fr);
+      gap: 8px;
+      align-items: center;
     }
 
     .special-study-header {
@@ -521,7 +523,7 @@
       z-index: 3;
       padding: 9px 14px;
       background: #eef3f8;
-      border-bottom: 1px solid #dfe7f0;
+      border-bottom: 1px solid #b8c2cd;
       font-size: 12px;
       font-weight: bold;
       color: #526174;
@@ -529,19 +531,24 @@
 
     .special-study-row {
       padding: 6px 12px;
-      border-bottom: 1px solid #edf1f6;
+      border-bottom: 1px solid #bfc8d2;
       font-size: 13px;
       line-height: 1.12;
     }
 
     .special-study-row.group-separator {
-      border-top: 2px solid #cfd8e3;
+      border-top: 2px solid #98a6b5;
       margin-top: 3px;
       padding-top: 11px;
     }
 
     .special-study-row:last-child {
       border-bottom: none;
+    }
+
+    .special-study-row > *,
+    .special-study-header > * {
+      min-width: 0;
     }
 
     .special-study-word {
@@ -586,7 +593,36 @@
     .special-example-line + .special-example-line {
       margin-top: 3px;
       padding-top: 4px;
-      border-top: 1px solid #edf1f6;
+      border-top: 1px solid #e4e9ef;
+    }
+
+    /* Excel Alt+Enter lines: preserve them as independent blocks in every special-study cell. */
+    .special-cell-lines {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      min-width: 0;
+    }
+
+    .special-cell-line {
+      display: block;
+      min-width: 0;
+      padding: 1px 0;
+      overflow-wrap: anywhere;
+      word-break: normal;
+    }
+
+    .special-study-translation .translation-note {
+      display: inline;
+      font-size: 0.72em;
+      line-height: 1;
+      color: #657386;
+    }
+
+    .special-cell-line + .special-cell-line {
+      margin-top: 3px;
+      padding-top: 4px;
+      border-top: 1px solid #e4e9ef;
     }
 
     .special-word-desktop {
@@ -1139,8 +1175,8 @@
 
       .special-study-header,
       .special-study-row {
-        grid-template-columns: 1fr 0.9fr 1.25fr 1.25fr;
-        gap: 7px;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 0.9fr) minmax(0, 1.25fr) minmax(0, 1.25fr);
+        gap: 6px;
       }
 
       .special-study-header {
@@ -1605,7 +1641,9 @@ function excelRichTextXmlToHtml(xml, fallbackText = "") {
         } else if (rgb && /^[0-9A-Fa-f]{6}$/.test(rgb)) {
           styles.push(`color:#${rgb}`);
         } else if (theme === "1") {
-          styles.push("color:#000000");
+          const tint = Number(colorNode.getAttribute("tint") || 0);
+          /* Theme 1 is black; positive tint is Excel's lighter gray variant. */
+          styles.push(tint > 0.35 ? "color:#7F7F7F" : "color:#000000");
         } else if (theme === "4") {
           styles.push("color:#4472C4");
         }
@@ -1633,6 +1671,105 @@ function getCellDisplayHtml(cell) {
   if (richXmlHtml) return richXmlHtml;
 
   return sanitizeRichCellHtml(cell && cell.h ? cell.h : "", plain);
+}
+
+
+function excelRunStyle(run) {
+  const colorNode = run.querySelector("rPr > color");
+  const bold = run.querySelector("rPr > b") !== null;
+  const italic = run.querySelector("rPr > i") !== null;
+  const underline = run.querySelector("rPr > u") !== null;
+  const styles = [];
+
+  if (colorNode) {
+    const rgb = colorNode.getAttribute("rgb");
+    const theme = colorNode.getAttribute("theme");
+    const tint = Number(colorNode.getAttribute("tint") || 0);
+
+    if (rgb && /^[0-9A-Fa-f]{8}$/.test(rgb)) {
+      styles.push(`color:#${rgb.slice(2)}`);
+    } else if (rgb && /^[0-9A-Fa-f]{6}$/.test(rgb)) {
+      styles.push(`color:#${rgb}`);
+    } else if (theme === "1") {
+      styles.push(tint > 0.35 ? "color:#7F7F7F" : "color:#000000");
+    } else if (theme === "4") {
+      styles.push("color:#4472C4");
+    }
+  }
+
+  if (bold) styles.push("font-weight:700");
+  if (italic) styles.push("font-style:italic");
+  if (underline) styles.push("text-decoration:underline");
+  return styles.join(";");
+}
+
+function getCellDisplayLines(cell) {
+  if (!cell) return [];
+
+  const plain = getCellPlainText(cell);
+  const xml = cell.r || "";
+
+  if (xml) {
+    try {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(`<root>${xml}</root>`, "application/xml");
+      if (!doc.querySelector("parsererror")) {
+        const runs = Array.from(doc.querySelectorAll("r"));
+        if (runs.length) {
+          const lines = [""];
+
+          runs.forEach(run => {
+            const textNode = run.querySelector("t");
+            if (!textNode) return;
+
+            const style = excelRunStyle(run);
+            const pieces = String(textNode.textContent || "").split(/\r?\n/);
+
+            pieces.forEach((piece, index) => {
+              const escaped = escapeHtml(piece);
+              if (escaped) {
+                lines[lines.length - 1] += style
+                  ? `<span style="${style}">${escaped}</span>`
+                  : escaped;
+              }
+              if (index < pieces.length - 1) lines.push("");
+            });
+          });
+
+          return lines.map(line => line || "&nbsp;");
+        }
+      }
+    } catch (error) {
+      /* Fall through to plain-text line handling. */
+    }
+  }
+
+  return String(plain || "")
+    .split(/\r?\n/)
+    .map(line => escapeHtml(line));
+}
+
+function formatSpecialCellFromExcel(cell, smallParentheticalNotes = false) {
+  if (!cell) return "";
+
+  if (smallParentheticalNotes) {
+    const plainLines = String(getCellPlainText(cell) || "").split(/\r?\n/);
+    const rendered = plainLines.map(line => {
+      const html = escapeHtml(line).replace(
+        /(\([^)]*\))/g,
+        '<span class="translation-note">$1</span>'
+      );
+      return `<span class="special-cell-line">${html || "&nbsp;"}</span>`;
+    });
+    return `<span class="special-cell-lines">${rendered.join("")}</span>`;
+  }
+
+  const lines = getCellDisplayLines(cell);
+  if (!lines.length) return "";
+
+  return `<span class="special-cell-lines">${lines
+    .map(line => `<span class="special-cell-line">${line}</span>`)
+    .join("")}</span>`;
 }
 
 function hasStrongTopBorder(cell) {
@@ -1748,10 +1885,10 @@ function parsePronounsProadverbsSheet(sheet) {
       estonian,
       english,
       groupSeparator: hasGroupSeparator,
-      estonianHtml: formatSpecialEstonianDisplay(getCellDisplayHtml(aCell), estonian),
-      englishHtml: formatSpecialEnglishMeaning(english),
-      exampleHtml: formatSpecialExampleHtml(getCellDisplayHtml(cCell)),
-      exampleTranslationHtml: formatSpecialExampleHtml(getCellDisplayHtml(dCell))
+      estonianHtml: formatSpecialCellFromExcel(aCell),
+      englishHtml: formatSpecialCellFromExcel(bCell, true),
+      exampleHtml: formatSpecialCellFromExcel(cCell),
+      exampleTranslationHtml: formatSpecialCellFromExcel(dCell)
     };
 
     studyRows.push(record);
@@ -2351,6 +2488,38 @@ function startQuiz(selectedCheckboxes) {
   showNextWords();
 }
 
+function fitSpecialStudyMobileText() {
+  if (window.innerWidth > 700) return;
+
+  document.querySelectorAll(
+    '.special-study-word .special-cell-line, .special-study-translation .special-cell-line'
+  ).forEach(line => {
+    /* Measure the real one-line width first. Do not let the browser break the
+       word before the auto-fit logic has had a chance to shrink it. */
+    line.style.fontSize = '';
+    line.style.whiteSpace = 'nowrap';
+    line.style.overflowWrap = 'normal';
+    line.style.wordBreak = 'normal';
+
+    const available = line.clientWidth;
+    if (!available) return;
+
+    let size = parseFloat(getComputedStyle(line).fontSize) || 10.5;
+    const minimum = 8.5;
+
+    while (line.scrollWidth > available + 1 && size > minimum) {
+      size = Math.max(minimum, size - 0.5);
+      line.style.fontSize = size + 'px';
+    }
+
+    /* Wrapping is only the last resort after reaching the minimum size. */
+    if (line.scrollWidth > available + 1) {
+      line.style.whiteSpace = 'normal';
+      line.style.overflowWrap = 'anywhere';
+    }
+  });
+}
+
 function showStudyVocabulary(chapterKey) {
   const overlay =
     document.getElementById("studyOverlay");
@@ -2425,6 +2594,7 @@ function showStudyVocabulary(chapterKey) {
 
   requestAnimationFrame(() => {
     list.scrollTop = 0;
+    if (isSpecial) fitSpecialStudyMobileText();
   });
 }
 
@@ -2516,7 +2686,7 @@ function showNextWords() {
         ${index + 1}. ${
           selectedMode === "et-en"
             ? (word.specialPronounsProadverbs
-                ? formatSpecialEstonianDisplay(escapeHtml(word.estonian), word.estonian)
+                ? escapeHtml(word.estonian).replace(/\r?\n/g, "<br>")
                 : escapeHtml(word.estonian))
             : escapeHtml(word.english)
         }
@@ -2560,7 +2730,7 @@ function showNextWords() {
 
 function getAcceptedAnswers(answerText) {
   return String(answerText || "")
-    .split(/\s*(?:\/|—|–)\s*/g)
+    .split(/\s*(?:\/|—|–|\r?\n)\s*/g)
     .map(answer => answer.trim().toLowerCase())
     .filter(answer => answer !== "");
 }
@@ -2919,7 +3089,10 @@ document.addEventListener("keydown", function(event) {
 });
 
 window.addEventListener("resize", () => {
-  requestAnimationFrame(fitChapterTitles);
+  requestAnimationFrame(() => {
+    fitChapterTitles();
+    fitSpecialStudyMobileText();
+  });
 });
 
 window.addEventListener("resize", fitChapterTitles);
