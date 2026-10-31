@@ -669,7 +669,8 @@
     ----------------------------- */
 
     .study-modal.particles-study-modal {
-      width: min(1500px, 98vw);
+      width: min(1500px, 100%);
+      max-width: 1500px;
       margin-left: auto;
       margin-right: auto;
     }
@@ -732,6 +733,29 @@
       color: #425466;
       line-height: 1.08;
       white-space: pre-line;
+    }
+
+    .particles-info-button {
+      display: none;
+      width: 18px;
+      height: 18px;
+      margin-left: 4px;
+      padding: 0;
+      border-radius: 50%;
+      border: 1px solid #b7c3d1;
+      background: #eef3f8;
+      color: #526174;
+      font-size: 11px;
+      line-height: 16px;
+      text-align: center;
+      vertical-align: middle;
+      cursor: pointer;
+      box-shadow: none;
+      flex: 0 0 18px;
+    }
+
+    .particles-mobile-explanation {
+      display: none;
     }
 
     .particles-study-explanation {
@@ -1302,50 +1326,82 @@
 
       .study-modal.particles-study-modal {
         width: 100%;
+        max-width: 100%;
+      }
+
+      .particles-study-header,
+      .particles-study-row {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 0.9fr) minmax(0, 1.25fr) minmax(0, 1.25fr);
+        gap: 6px;
       }
 
       .particles-study-header {
+        display: grid;
+        padding: 7px 8px;
+        font-size: 9px;
+      }
+
+      .particles-study-header .particles-header-explanation {
         display: none;
       }
 
       .particles-study-row {
-        grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
-        grid-template-areas:
-          "word translation"
-          "explanation explanation"
-          "example exampleTranslation";
-        gap: 5px 8px;
-        padding: 8px;
-        align-items: start;
+        padding: 7px 8px;
+        align-items: center;
       }
 
       .particles-study-word {
-        grid-area: word;
-        font-size: 11px;
+        font-size: 10.5px;
       }
 
       .particles-study-translation {
-        grid-area: translation;
-        font-size: 10px;
+        display: flex;
+        align-items: flex-start;
+        gap: 2px;
+        font-size: 9.5px;
+      }
+
+      .particles-study-translation-text {
+        min-width: 0;
+        flex: 1 1 auto;
+      }
+
+      .particles-info-button {
+        display: inline-block;
+      }
+
+      .particles-info-button:hover {
+        background: #e5edf6;
+        transform: none;
       }
 
       .particles-study-explanation {
-        grid-area: explanation;
-        font-size: 8.5px;
-        line-height: 1.12;
-        padding: 3px 0 4px 0;
-        border-top: 1px solid #edf1f6;
-        border-bottom: 1px solid #edf1f6;
+        display: none;
       }
 
-      .particles-study-example {
-        grid-area: example;
-        font-size: 9.5px;
-      }
-
+      .particles-study-example,
       .particles-study-example-translation {
-        grid-area: exampleTranslation;
         font-size: 9.5px;
+        line-height: 1.05;
+      }
+
+      .particles-mobile-explanation {
+        padding: 7px 10px 8px 10px;
+        background: #f7f9fc;
+        border-bottom: 1px solid #c7d0da;
+        color: #657386;
+        font-size: 9px;
+        line-height: 1.2;
+      }
+
+      .particles-mobile-explanation.open {
+        display: block;
+      }
+
+      .particles-mobile-explanation-label {
+        font-weight: bold;
+        color: #526174;
+        margin-right: 4px;
       }
 
       #quizSection.special-quiz-mode .word-row {
@@ -2857,6 +2913,28 @@ function fitSpecialStudyMobileText() {
   });
 }
 
+function toggleParticleExplanation(explanationId, button) {
+  const target = document.getElementById(explanationId);
+  if (!target) return;
+
+  const willOpen = !target.classList.contains("open");
+
+  document.querySelectorAll(".particles-mobile-explanation.open").forEach(panel => {
+    panel.classList.remove("open");
+  });
+
+  document.querySelectorAll(".particles-info-button[aria-expanded=\"true\"]").forEach(infoButton => {
+    infoButton.setAttribute("aria-expanded", "false");
+    infoButton.setAttribute("aria-label", "Show explanation");
+  });
+
+  if (willOpen) {
+    target.classList.add("open");
+    button.setAttribute("aria-expanded", "true");
+    button.setAttribute("aria-label", "Hide explanation");
+  }
+}
+
 function showStudyVocabulary(chapterKey) {
   const overlay =
     document.getElementById("studyOverlay");
@@ -2890,23 +2968,40 @@ function showStudyVocabulary(chapterKey) {
     header.innerHTML = `
       <div>Estonian</div>
       <div>English</div>
-      <div>Explanation</div>
+      <div class="particles-header-explanation">Explanation</div>
       <div>Estonian example</div>
       <div>English translation</div>
     `;
     list.appendChild(header);
 
-    (chapterSpecialStudyRows[chapterKey] || []).forEach(item => {
+    (chapterSpecialStudyRows[chapterKey] || []).forEach((item, index) => {
+      const explanationId = `particle-explanation-${index}`;
       const row = document.createElement("div");
       row.className = "particles-study-row";
       row.innerHTML = `
         <div class="particles-study-word">${item.estonianHtml}</div>
-        <div class="particles-study-translation">${item.englishHtml}</div>
+        <div class="particles-study-translation">
+          <span class="particles-study-translation-text">${item.englishHtml}</span>
+          <button
+            type="button"
+            class="particles-info-button"
+            aria-label="Show explanation"
+            aria-expanded="false"
+            aria-controls="${explanationId}"
+            onclick="toggleParticleExplanation('${explanationId}', this)"
+          >ⓘ</button>
+        </div>
         <div class="particles-study-explanation">${item.explanationHtml}</div>
         <div class="particles-study-example">${item.exampleHtml}</div>
         <div class="particles-study-example-translation">${item.exampleTranslationHtml}</div>
       `;
       list.appendChild(row);
+
+      const explanation = document.createElement("div");
+      explanation.id = explanationId;
+      explanation.className = "particles-mobile-explanation";
+      explanation.innerHTML = `<span class="particles-mobile-explanation-label">Explanation:</span>${item.explanationHtml}`;
+      list.appendChild(explanation);
     });
   } else if (isSpecial) {
     const header = document.createElement("div");
