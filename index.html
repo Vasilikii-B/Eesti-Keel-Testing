@@ -664,6 +664,97 @@
     }
 
     /* -----------------------------
+       PARTICLES STUDY VIEW
+       Five columns: word, translation, explanation, ET example, EN example.
+    ----------------------------- */
+
+    .study-modal.particles-study-modal {
+      width: min(1500px, 98vw);
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .study-list.particles-study-list {
+      background: #ffffff;
+      border-color: #aeb8c4;
+      overflow-x: hidden;
+    }
+
+    .particles-study-header,
+    .particles-study-row {
+      display: grid;
+      grid-template-columns:
+        minmax(110px, 0.78fr)
+        minmax(150px, 1.12fr)
+        minmax(190px, 1.42fr)
+        minmax(190px, 1.34fr)
+        minmax(190px, 1.34fr);
+      gap: 8px;
+      align-items: center;
+    }
+
+    .particles-study-header {
+      position: sticky;
+      top: 0;
+      z-index: 3;
+      padding: 9px 12px;
+      background: #eef3f8;
+      border-bottom: 1px solid #b8c2cd;
+      font-size: 11px;
+      font-weight: bold;
+      color: #526174;
+    }
+
+    .particles-study-row {
+      padding: 7px 10px;
+      border-bottom: 1px solid #c7d0da;
+      line-height: 1.08;
+    }
+
+    .particles-study-row:last-child {
+      border-bottom: none;
+    }
+
+    .particles-study-row > *,
+    .particles-study-header > * {
+      min-width: 0;
+    }
+
+    .particles-study-word {
+      font-size: 12.5px;
+      font-weight: bold;
+      line-height: 1.06;
+      white-space: pre-line;
+    }
+
+    .particles-study-translation {
+      font-size: 11.5px;
+      color: #425466;
+      line-height: 1.08;
+      white-space: pre-line;
+    }
+
+    .particles-study-explanation {
+      font-size: 9px;
+      color: #657386;
+      line-height: 1.12;
+      white-space: normal;
+    }
+
+    .particles-study-example,
+    .particles-study-example-translation {
+      font-size: 10.5px;
+      line-height: 1.08;
+      white-space: normal;
+    }
+
+    .particles-study-row .special-cell-line + .special-cell-line {
+      margin-top: 3px;
+      padding-top: 4px;
+      border-top: 1px solid #e4e9ef;
+    }
+
+    /* -----------------------------
        QUIZ
     ----------------------------- */
 
@@ -1209,6 +1300,54 @@
         font-size: 11px;
       }
 
+      .study-modal.particles-study-modal {
+        width: 100%;
+      }
+
+      .particles-study-header {
+        display: none;
+      }
+
+      .particles-study-row {
+        grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+        grid-template-areas:
+          "word translation"
+          "explanation explanation"
+          "example exampleTranslation";
+        gap: 5px 8px;
+        padding: 8px;
+        align-items: start;
+      }
+
+      .particles-study-word {
+        grid-area: word;
+        font-size: 11px;
+      }
+
+      .particles-study-translation {
+        grid-area: translation;
+        font-size: 10px;
+      }
+
+      .particles-study-explanation {
+        grid-area: explanation;
+        font-size: 8.5px;
+        line-height: 1.12;
+        padding: 3px 0 4px 0;
+        border-top: 1px solid #edf1f6;
+        border-bottom: 1px solid #edf1f6;
+      }
+
+      .particles-study-example {
+        grid-area: example;
+        font-size: 9.5px;
+      }
+
+      .particles-study-example-translation {
+        grid-area: exampleTranslation;
+        font-size: 9.5px;
+      }
+
       #quizSection.special-quiz-mode .word-row {
         grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
       }
@@ -1459,6 +1598,8 @@ const PRONOUNS_PROADVERBS_SHEET = "pronouns - proadverbs";
 const PRONOUNS_PROADVERBS_CHAPTER = "Pronouns - Proadverbs";
 const CONJUNCTIONS_SHEET = "conjunctions";
 const CONJUNCTIONS_CHAPTER = "Conjunctions";
+const PARTICLES_SHEET = "particles";
+const PARTICLES_CHAPTER = "Particles";
 
 
 /* ------------------------------------------------
@@ -2017,11 +2158,58 @@ function parseConjunctionsSheet(sheet) {
   return { quizWords, studyRows };
 }
 
+function parseParticlesSheet(sheet) {
+  if (!sheet || !sheet["!ref"]) {
+    return { quizWords: [], studyRows: [] };
+  }
+
+  const range = XLSX.utils.decode_range(sheet["!ref"]);
+  const quizWords = [];
+  const studyRows = [];
+
+  for (let r = range.s.r + 1; r <= range.e.r; r++) {
+    const aCell = getSheetCell(sheet, r, 0);
+    const bCell = getSheetCell(sheet, r, 1);
+    const cCell = getSheetCell(sheet, r, 2);
+    const dCell = getSheetCell(sheet, r, 3);
+    const eCell = getSheetCell(sheet, r, 4);
+
+    const estonian = getCellPlainText(aCell);
+    const english = getCellPlainText(bCell);
+    const explanation = getCellPlainText(cCell);
+    const example = getCellPlainText(dCell);
+    const exampleTranslation = getCellPlainText(eCell);
+
+    if (!estonian && !english && !explanation && !example && !exampleTranslation) continue;
+    if (!estonian || !english) continue;
+
+    studyRows.push({
+      type: "word",
+      estonian,
+      english,
+      explanation,
+      estonianHtml: formatSpecialCellFromExcel(aCell),
+      englishHtml: formatSpecialCellFromExcel(bCell),
+      explanationHtml: formatSpecialCellFromExcel(cCell),
+      exampleHtml: formatSpecialCellFromExcel(dCell),
+      exampleTranslationHtml: formatSpecialCellFromExcel(eCell)
+    });
+
+    quizWords.push({
+      estonian,
+      english
+    });
+  }
+
+  return { quizWords, studyRows };
+}
+
 function parseWorkbook(workbook) {
   const vocabularySheet = workbook.Sheets[VOCABULARY_SHEET];
   const orderSheet = workbook.Sheets[ORDER_SHEET];
   const pronounsProadverbsSheet = workbook.Sheets[PRONOUNS_PROADVERBS_SHEET];
   const conjunctionsSheet = workbook.Sheets[CONJUNCTIONS_SHEET];
+  const particlesSheet = workbook.Sheets[PARTICLES_SHEET];
 
   if (!vocabularySheet) {
     throw new Error(
@@ -2236,6 +2424,22 @@ function parseWorkbook(workbook) {
       newDisplayNames[specialKey] = CONJUNCTIONS_CHAPTER;
       newCategories[specialKey] = "Other";
       newStudyLayouts[specialKey] = "pronouns-proadverbs";
+      newSpecialStudyRows[specialKey] = special.studyRows;
+    }
+  }
+
+  /* Particles use a dedicated five-column study layout.
+     Quiz mode still uses only Word and Translation. */
+  if (particlesSheet) {
+    const special = parseParticlesSheet(particlesSheet);
+
+    if (special.quizWords.length > 0) {
+      const specialKey = "chapter_particles";
+      newChapters[specialKey] = special.quizWords;
+      newOrder.push(specialKey);
+      newDisplayNames[specialKey] = PARTICLES_CHAPTER;
+      newCategories[specialKey] = "Other";
+      newStudyLayouts[specialKey] = "particles";
       newSpecialStudyRows[specialKey] = special.studyRows;
     }
   }
@@ -2665,6 +2869,7 @@ function showStudyVocabulary(chapterKey) {
 
   const modal = document.querySelector(".study-modal");
   const isSpecial = chapterStudyLayouts[chapterKey] === "pronouns-proadverbs";
+  const isParticles = chapterStudyLayouts[chapterKey] === "particles";
 
   title.textContent =
     chapterDisplayNames[chapterKey] ||
@@ -2675,9 +2880,35 @@ function showStudyVocabulary(chapterKey) {
 
   list.innerHTML = "";
   list.classList.toggle("special-study-list", isSpecial);
+  list.classList.toggle("particles-study-list", isParticles);
   modal.classList.toggle("special-study-modal", isSpecial);
+  modal.classList.toggle("particles-study-modal", isParticles);
 
-  if (isSpecial) {
+  if (isParticles) {
+    const header = document.createElement("div");
+    header.className = "particles-study-header";
+    header.innerHTML = `
+      <div>Estonian</div>
+      <div>English</div>
+      <div>Explanation</div>
+      <div>Estonian example</div>
+      <div>English translation</div>
+    `;
+    list.appendChild(header);
+
+    (chapterSpecialStudyRows[chapterKey] || []).forEach(item => {
+      const row = document.createElement("div");
+      row.className = "particles-study-row";
+      row.innerHTML = `
+        <div class="particles-study-word">${item.estonianHtml}</div>
+        <div class="particles-study-translation">${item.englishHtml}</div>
+        <div class="particles-study-explanation">${item.explanationHtml}</div>
+        <div class="particles-study-example">${item.exampleHtml}</div>
+        <div class="particles-study-example-translation">${item.exampleTranslationHtml}</div>
+      `;
+      list.appendChild(row);
+    });
+  } else if (isSpecial) {
     const header = document.createElement("div");
     header.className = "special-study-header";
     header.innerHTML = `
