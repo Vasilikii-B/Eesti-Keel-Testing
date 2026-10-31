@@ -707,7 +707,7 @@
     }
 
     .particles-study-row {
-      padding: 0px 10px;
+      padding: 0 10px;
       border-bottom: 1px solid #c7d0da;
       line-height: 1.03;
     }
@@ -733,6 +733,10 @@
       color: #425466;
       line-height: 1.04;
       white-space: pre-line;
+    }
+
+    .particles-header-info-hint {
+      display: none;
     }
 
     .particles-info-button {
@@ -778,8 +782,8 @@
     }
 
     .particles-study-row .special-cell-line + .special-cell-line {
-      margin-top: 1px;
-      padding-top: 1px;
+      margin-top: 0;
+      padding-top: 0;
       border-top: 1px solid #e4e9ef;
     }
 
@@ -1360,10 +1364,9 @@
       }
 
       .particles-study-translation {
-        position: relative;
         display: block;
-        padding-right: 14px;
         font-size: 9.5px;
+        cursor: pointer;
       }
 
       .particles-study-translation-text {
@@ -1371,23 +1374,12 @@
         min-width: 0;
       }
 
-      .particles-info-button {
-        display: block;
-        position: absolute;
-        right: 0;
-        top: 50%;
-        width: 13px;
-        height: 13px;
-        margin: 0;
-        font-size: 8px;
-        line-height: 11px;
-        transform: translateY(-50%);
-        flex: none;
-      }
-
-      .particles-info-button:hover {
-        background: #e5edf6;
-        transform: translateY(-50%);
+      .particles-header-info-hint {
+        display: inline-block;
+        margin-left: 3px;
+        font-size: 0.9em;
+        font-weight: normal;
+        vertical-align: baseline;
       }
 
       .particles-study-explanation {
@@ -1413,11 +1405,6 @@
         display: block;
       }
 
-      .particles-mobile-explanation-label {
-        font-weight: bold;
-        color: #526174;
-        margin-right: 4px;
-      }
 
       #quizSection.special-quiz-mode .word-row {
         grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
@@ -2928,7 +2915,9 @@ function fitSpecialStudyMobileText() {
   });
 }
 
-function toggleParticleExplanation(explanationId, button) {
+function toggleParticleExplanation(explanationId, trigger) {
+  if (window.innerWidth > 700) return;
+
   const target = document.getElementById(explanationId);
   if (!target) return;
 
@@ -2938,15 +2927,13 @@ function toggleParticleExplanation(explanationId, button) {
     panel.classList.remove("open");
   });
 
-  document.querySelectorAll(".particles-info-button[aria-expanded=\"true\"]").forEach(infoButton => {
-    infoButton.setAttribute("aria-expanded", "false");
-    infoButton.setAttribute("aria-label", "Show explanation");
+  document.querySelectorAll(".particles-study-translation[aria-expanded=\"true\"]").forEach(cell => {
+    cell.setAttribute("aria-expanded", "false");
   });
 
   if (willOpen) {
     target.classList.add("open");
-    button.setAttribute("aria-expanded", "true");
-    button.setAttribute("aria-label", "Hide explanation");
+    trigger.setAttribute("aria-expanded", "true");
   }
 }
 
@@ -2982,7 +2969,7 @@ function showStudyVocabulary(chapterKey) {
     header.className = "particles-study-header";
     header.innerHTML = `
       <div>Estonian</div>
-      <div>English</div>
+      <div>English<span class="particles-header-info-hint">ⓘ</span></div>
       <div class="particles-header-explanation">Explanation</div>
       <div>Estonian example</div>
       <div>English translation</div>
@@ -2995,16 +2982,13 @@ function showStudyVocabulary(chapterKey) {
       row.className = "particles-study-row";
       row.innerHTML = `
         <div class="particles-study-word">${item.estonianHtml}</div>
-        <div class="particles-study-translation">
+        <div
+          class="particles-study-translation"
+          aria-expanded="false"
+          aria-controls="${explanationId}"
+          onclick="toggleParticleExplanation('${explanationId}', this)"
+        >
           <span class="particles-study-translation-text">${item.englishHtml}</span>
-          <button
-            type="button"
-            class="particles-info-button"
-            aria-label="Show explanation"
-            aria-expanded="false"
-            aria-controls="${explanationId}"
-            onclick="toggleParticleExplanation('${explanationId}', this)"
-          >ⓘ</button>
         </div>
         <div class="particles-study-explanation">${item.explanationHtml}</div>
         <div class="particles-study-example">${item.exampleHtml}</div>
@@ -3015,7 +2999,7 @@ function showStudyVocabulary(chapterKey) {
       const explanation = document.createElement("div");
       explanation.id = explanationId;
       explanation.className = "particles-mobile-explanation";
-      explanation.innerHTML = `<span class="particles-mobile-explanation-label">Explanation:</span>${item.explanationHtml}`;
+      explanation.innerHTML = item.explanationHtml;
       list.appendChild(explanation);
     });
   } else if (isSpecial) {
