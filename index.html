@@ -735,7 +735,8 @@
       white-space: pre-line;
     }
 
-    .particles-header-info-hint {
+    .particles-header-info-hint,
+    .particles-row-info-hint {
       display: none;
     }
 
@@ -1370,16 +1371,26 @@
       }
 
       .particles-study-translation-text {
-        display: block;
+        display: inline;
         min-width: 0;
       }
 
-      .particles-header-info-hint {
-        display: inline-block;
+      .particles-study-translation-text .special-cell-lines {
+        display: inline;
+        width: auto;
+      }
+
+      .particles-study-translation-text .special-cell-line {
+        display: inline;
+      }
+
+      .particles-row-info-hint {
+        display: inline;
         margin-left: 3px;
         font-size: 0.9em;
         font-weight: normal;
         vertical-align: baseline;
+        white-space: nowrap;
       }
 
       .particles-study-explanation {
@@ -2969,7 +2980,7 @@ function showStudyVocabulary(chapterKey) {
     header.className = "particles-study-header";
     header.innerHTML = `
       <div>Estonian</div>
-      <div>English<span class="particles-header-info-hint">ⓘ</span></div>
+      <div>English</div>
       <div class="particles-header-explanation">Explanation</div>
       <div>Estonian example</div>
       <div>English translation</div>
@@ -2988,7 +2999,7 @@ function showStudyVocabulary(chapterKey) {
           aria-controls="${explanationId}"
           onclick="toggleParticleExplanation('${explanationId}', this)"
         >
-          <span class="particles-study-translation-text">${item.englishHtml}</span>
+          <span class="particles-study-translation-text">${item.englishHtml}<span class="particles-row-info-hint">ⓘ</span></span>
         </div>
         <div class="particles-study-explanation">${item.explanationHtml}</div>
         <div class="particles-study-example">${item.exampleHtml}</div>
