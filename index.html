@@ -735,8 +735,7 @@
       white-space: pre-line;
     }
 
-    .particles-header-info-hint,
-    .particles-row-info-hint {
+    .particles-header-info-hint {
       display: none;
     }
 
@@ -1371,22 +1370,13 @@
       }
 
       .particles-study-translation-text {
-        display: inline;
+        display: block;
         min-width: 0;
       }
 
-      .particles-study-translation-text .special-cell-lines {
+      .particles-header-info-hint {
         display: inline;
-        width: auto;
-      }
-
-      .particles-study-translation-text .special-cell-line {
-        display: inline;
-      }
-
-      .particles-row-info-hint {
-        display: inline;
-        margin-left: 3px;
+        margin-left: 2px;
         font-size: 0.9em;
         font-weight: normal;
         vertical-align: baseline;
@@ -2898,7 +2888,7 @@ function fitSpecialStudyMobileText() {
   if (window.innerWidth > 700) return;
 
   document.querySelectorAll(
-    '.special-study-word .special-cell-line, .special-study-translation .special-cell-line'
+    '.special-study-word .special-cell-line, .special-study-translation .special-cell-line, .particles-study-word .special-cell-line'
   ).forEach(line => {
     /* Measure the real one-line width first. Do not let the browser break the
        word before the auto-fit logic has had a chance to shrink it. */
@@ -2980,7 +2970,7 @@ function showStudyVocabulary(chapterKey) {
     header.className = "particles-study-header";
     header.innerHTML = `
       <div>Estonian</div>
-      <div>English</div>
+      <div>English <span class="particles-header-info-hint">ⓘ</span></div>
       <div class="particles-header-explanation">Explanation</div>
       <div>Estonian example</div>
       <div>English translation</div>
@@ -2999,7 +2989,7 @@ function showStudyVocabulary(chapterKey) {
           aria-controls="${explanationId}"
           onclick="toggleParticleExplanation('${explanationId}', this)"
         >
-          <span class="particles-study-translation-text">${item.englishHtml}<span class="particles-row-info-hint">ⓘ</span></span>
+          <span class="particles-study-translation-text">${item.englishHtml}</span>
         </div>
         <div class="particles-study-explanation">${item.explanationHtml}</div>
         <div class="particles-study-example">${item.exampleHtml}</div>
@@ -3068,7 +3058,7 @@ function showStudyVocabulary(chapterKey) {
 
   requestAnimationFrame(() => {
     list.scrollTop = 0;
-    if (isSpecial) fitSpecialStudyMobileText();
+    if (isSpecial || isParticles) fitSpecialStudyMobileText();
   });
 }
 
