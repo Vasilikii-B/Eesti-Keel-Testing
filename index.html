@@ -1420,6 +1420,13 @@
         max-width: none;
       }
     }
+
+    .adpositions-study-list .special-study-header,
+    .adpositions-study-list .special-study-row {
+      grid-template-columns: minmax(0, 0.55fr) minmax(0, 0.85fr) minmax(0, 1.5fr) minmax(0, 1.5fr);
+    }
+    .adposition-preposition-title { color: #E67E22; }
+    .adposition-postposition-title { color: #118DFF; }
   </style>
 </head>
 
@@ -2168,6 +2175,55 @@ function parsePronounsProadverbsSheet(sheet) {
   return { quizWords, studyRows };
 }
 
+/* Recover whole-cell font colors, which SheetJS CE does not attach to cells. */
+function restoreAdpositionFonts(workbook) {
+  const files = workbook.files;
+  const sheet = workbook.Sheets[PREPOSITIONS_POSTPOSITIONS_SHEET];
+  if (!files || !sheet) return;
+  const readXml = path => {
+    const entry = files[path];
+    if (!entry) return null;
+    const content = entry.content;
+    const xml = typeof content === "string" ? content : new TextDecoder().decode(content);
+    return new DOMParser().parseFromString(xml, "application/xml");
+  };
+  const book = readXml("xl/workbook.xml");
+  const rels = readXml("xl/_rels/workbook.xml.rels");
+  if (!book || !rels) return;
+  const entry = Array.from(book.getElementsByTagName("sheet"))
+    .find(node => node.getAttribute("name") === PREPOSITIONS_POSTPOSITIONS_SHEET);
+  if (!entry) return;
+  const id = entry.getAttribute("r:id");
+  const rel = Array.from(rels.getElementsByTagName("Relationship"))
+    .find(node => node.getAttribute("Id") === id);
+  if (!rel) return;
+  const target = rel.getAttribute("Target");
+  const path = target.startsWith("/") ? target.slice(1) : "xl/" + target;
+  const xml = readXml(path);
+  if (!xml) return;
+  const styles = workbook.Styles || {};
+  Array.from(xml.getElementsByTagName("c")).forEach(node => {
+    const cell = sheet[node.getAttribute("r")];
+    const xf = (styles.CellXf || [])[Number(node.getAttribute("s") || 0)];
+    const font = xf && (styles.Fonts || [])[xf.fontId];
+    if (cell && font) cell.adpositionFont = font;
+  });
+}
+
+function formatAdpositionWord(cell) {
+  const html = formatSpecialCellFromExcel(cell);
+  const rgb = cell && cell.adpositionFont && cell.adpositionFont.color && cell.adpositionFont.color.rgb;
+  if (!rgb || !/^(?:[0-9a-f]{6}|[0-9a-f]{8})$/i.test(rgb)) return html;
+  return `<span style="color:#${rgb.slice(-6)}">${html}</span>`;
+}
+
+function chapterTitleHtml(chapterKey) {
+  if (chapterKey === "chapter_prepositions_postpositions") {
+    return '<span class="adposition-preposition-title">Prepositions</span> - <span class="adposition-postposition-title">Postpositions</span>';
+  }
+  return escapeHtml(chapterDisplayNames[chapterKey] || chapterKey);
+}
+
 function parsePrepositionsPostpositionsSheet(sheet) {
   if (!sheet || !sheet["!ref"]) {
     return { quizWords: [], studyRows: [] };
@@ -2203,7 +2259,7 @@ function parsePrepositionsPostpositionsSheet(sheet) {
       groupStart,
       groupEnd,
       groupBox,
-      estonianHtml: formatSpecialCellFromExcel(aCell),
+      estonianHtml: formatAdpositionWord(aCell),
       englishHtml: formatSpecialCellFromExcel(bCell),
       exampleHtml: formatSpecialCellFromExcel(cCell),
       exampleTranslationHtml: formatSpecialCellFromExcel(dCell)
@@ -2318,6 +2374,7 @@ function parseParticlesSheet(sheet) {
 }
 
 function parseWorkbook(workbook) {
+  restoreAdpositionFonts(workbook);
   const vocabularySheet = workbook.Sheets[VOCABULARY_SHEET];
   const orderSheet = workbook.Sheets[ORDER_SHEET];
   const pronounsProadverbsSheet = workbook.Sheets[PRONOUNS_PROADVERBS_SHEET];
@@ -2653,7 +2710,7 @@ function renderChapterCards() {
         getCategoryClass(chapterCategories[chapterKey])
       }">
         <span class="chapter-number">${index + 1}.</span>
-        <span class="chapter-title">${chapterDisplayNames[chapterKey]}</span>
+        <span class="chapter-title">${chapterTitleHtml(chapterKey)}</span>
       </div>
     `;
 
@@ -2677,7 +2734,7 @@ async function loadVocabularyFromUrl(fileName) {
 
   const workbook = XLSX.read(arrayBuffer, {
     type: "array",
-    cellStyles: true,
+    cellStyles: true, bookFiles: true,
     cellHTML: true
   });
 
@@ -2703,7 +2760,7 @@ function loadVocabularyFromDesktopFile(event) {
 
       const workbook = XLSX.read(
         data,
-        { type: "array", cellStyles: true, cellHTML: true }
+        { type: "array", cellStyles: true, bookFiles: true, cellHTML: true }
       );
 
       parseWorkbook(workbook);
@@ -3021,15 +3078,14 @@ function showStudyVocabulary(chapterKey) {
   const isSpecial = chapterStudyLayouts[chapterKey] === "pronouns-proadverbs";
   const isParticles = chapterStudyLayouts[chapterKey] === "particles";
 
-  title.textContent =
-    chapterDisplayNames[chapterKey] ||
-    chapterKey;
+  title.innerHTML = chapterTitleHtml(chapterKey);
 
   document.getElementById("studyWordCount").textContent =
     `${chapters[chapterKey].length} ${chapters[chapterKey].length === 1 ? "word" : "words"}`;
 
   list.innerHTML = "";
   list.classList.toggle("special-study-list", isSpecial);
+  list.classList.toggle("adpositions-study-list", chapterKey === "chapter_prepositions_postpositions");
   list.classList.toggle("particles-study-list", isParticles);
   modal.classList.toggle("special-study-modal", isSpecial);
   modal.classList.toggle("particles-study-modal", isParticles);
