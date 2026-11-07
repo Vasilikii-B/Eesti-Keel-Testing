@@ -1423,7 +1423,7 @@
 
     .adpositions-study-list .special-study-header,
     .adpositions-study-list .special-study-row {
-      grid-template-columns: minmax(0, 0.55fr) minmax(0, 0.85fr) minmax(0, 1.5fr) minmax(0, 1.5fr);
+      grid-template-columns: minmax(0, 0.875fr) minmax(0, 0.85fr) minmax(0, 1.325fr) minmax(0, 1.325fr);
     }
     .adposition-preposition-title { color: #E67E22; }
     .adposition-postposition-title { color: #118DFF; }
@@ -2710,7 +2710,7 @@ function renderChapterCards() {
         getCategoryClass(chapterCategories[chapterKey])
       }">
         <span class="chapter-number">${index + 1}.</span>
-        <span class="chapter-title">${chapterTitleHtml(chapterKey)}</span>
+        <span class="chapter-title">${escapeHtml(chapterDisplayNames[chapterKey])}</span>
       </div>
     `;
 
